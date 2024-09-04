@@ -16,12 +16,12 @@ If you cannot install pytorch<=2.0.1, please refer to the [Compatibility](#compa
 
 ## Datasets
 Full datasets are available [here.]()
-
 - Cylinder_Flow
     - 1000/100 train/valid samples
     - Incompressible NS in water, Re ~100-1000, dt = 0.01
     - Around 2000 mesh points, downsampled to 25 timesteps
     - Each data sample has a different shape, so they cannot be stacked. Therefore each data sample is in its own numbered dictionary ('0' has sample 0, '1' has sample 1, etc.). 
+```
         - dataset.h5 (keys: '0', '1', ... etc.)
             - '0' (keys: 'cells', 'mesh_pos', 'metadata', 'node_type', 'pressure', 'u', 'v')
                 - 'cells': shape (num_edges, 3). Defines connectivity in triangular mesh. Only used for plotting
@@ -41,12 +41,14 @@ Full datasets are available [here.]()
                     - 'u_inlet': shape(). x-component of velocity at the inlet.
                     - 'v_inlet': shape(). y-component of velocity at the inlet.
             - '1', '2', ... etc.
+```
 - Smoke Buoyancy (NS2D)
     - 2496/608 train/valid samples.
         - Datasets are divided into separates files with 32 samples each. This results in 78 training files (78x32=2496) and 19 valid files (19x32=608)
     - Smoke driven by a buoyant force, dt=1.5
     - 128x128 spatial resolution, with 56 timesteps.
     - Each file contains 32 samples for a given seed, with uniform shape. The text captions are not uniform, so they are stored in a numbered dictionary as well.
+```
         - dataset.h5 (keys: 'train' or 'valid')
             - 'train' (keys: 'buo_y', 'dt', 'dx', 'dy', 't', 'text_labels', 'u', 'vx', 'vy', 'x', 'y')
                 - 'buo_y': shape (32,). Contains a scalar buoyancy factor for each sample.
@@ -60,7 +62,7 @@ Full datasets are available [here.]()
                 - 'text_labels' (keys: '0', '1', ..., '31')
                     - '0': shape (). Contains the text caption for the 0-th sample. Read with ['text_labels']['0'].asstr()[()]
                     - '1', '2', ... '31': Contains text cpation for the n-th sample.
-
+```
 ## Training an Autoencoder
 The config file will expect:
 - A data directory with the formatted data
