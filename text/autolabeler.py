@@ -4,7 +4,7 @@ import numpy as np
 def get_cylinder_pos_radius(sample):
     node_type = sample["node_type"][:]
     mesh_pos = sample["mesh_pos"][:]
-    mask = node_type[:, 0] == 6
+    mask = node_type[:, 0] == 6 # wall and boundaries
     pos_wall = mesh_pos[mask]
     pos_cylinder = [] 
     for i in range(len(pos_wall)):
