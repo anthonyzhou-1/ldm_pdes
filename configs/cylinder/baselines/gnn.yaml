@@ -1,0 +1,46 @@
+load_dir: logs/GNN2024-08-29T11-53-05/model_epoch=549-val/
+model_path: logs/GNN2024-08-29T11-53-05/model_epoch=549-val/rollout_loss=0.07.ckpt
+model_name: gnn
+
+data:
+  #data_dir: /dev/shm/mesh/
+  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
+  batch_size: 1
+  num_workers: 20
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    return_cells: True
+  normalizer:
+    use_norm: true 
+    scaler: normal  
+    #stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: False
+
+model:
+  message_passing_num: 8 # num processor layers
+  node_input_size : 3
+  edge_input_size : 2
+  hidden_size: 1024
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 100
+  check_val_every_n_epoch: 25
+  checkpoint: null
+  dataset_size: 1000
+  default_root_dir: logs/
+  devices: [0]
+  dist: false
+  learning_rate: 1.0e-05
+  log_every_n_steps: 10
+  max_epochs: 2000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: GNN
+  project: ldm_baselines

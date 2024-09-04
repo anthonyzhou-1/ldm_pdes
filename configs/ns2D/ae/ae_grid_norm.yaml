@@ -1,0 +1,102 @@
+data:
+  data_dir: /home/ayz2/data/NavierStokes-2D-conditoned
+  batch_size: 16
+  num_workers: 20
+  mode: ns2D
+  dataset:
+    data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+    delta_t: 2
+    downsample: 2
+    trajlen: 56
+    num_training_trajs: -1   # use all for each buoyancy
+    num_testing_trajs: -1
+    start_time: 0   # for testing
+  normalizer:
+    use_norm: true 
+    scaler: normal
+
+model:
+  aeconfig:
+    decoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.0
+      hidden_channels: 64
+      in_channels: 16
+      num_res_blocks: 2
+      out_channels: 3
+      cond_channels: 1
+      resolution: [28, 64, 64]
+      z_channels: 16
+      tanh_out: false
+    encoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.0
+      hidden_channels: 64
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 16
+      cond_channels: 1
+      resolution: [28, 64, 64]
+      z_channels: 16
+      tanh_out: false
+  lossconfig:
+    #disc_ckpt: logs/discriminator.ckpt
+    discriminator:
+      attn_resolutions: []
+      ch_mult:
+      - 1
+      - 2
+      - 2
+      - 4
+      double_z: false
+      dropout: 0.0
+      hidden_channels: 16
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 4
+      cond_channels: 1
+      resolution: [28, 64, 64]
+      z_channels: 4
+      tanh_out: true
+    loss:
+      disc_start: 100000000
+      disc_weight: 0.0
+      kl_weight: 5.0e-06
+      perceptual_weight: 0.0
+      disc_conditional: true
+    lpips:
+      model_path: /home/ayz2/ldm_fluids/logs/DPOT/model_Ti.pth
+      model_size: Ti
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 5
+  checkpoint: null
+  dataset_size: 2496
+  default_root_dir: /home/ayz2/ldm_fluids/logs/
+  devices: [1]
+  dist: false
+  learning_rate: 1.0e-05
+  log_every_n_steps: 100
+  max_epochs: 1000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: Grid_autoencoder_16_disc_norm
+  project: ldm_autoencoder

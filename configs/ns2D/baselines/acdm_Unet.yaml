@@ -1,0 +1,79 @@
+load_dir: logs/ACDM_DiT2024-09-01T14-41-43/
+model_name: acdm
+
+data:
+  #data_dir: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned/
+  data_dir: /home/ayz2/data/NavierStokes-2D-conditoned/
+  batch_size: 8
+  num_workers: 16
+  mode: ns2D
+  drop_last: False
+  dataset:
+    #data_path: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned
+    data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+    delta_t: 1
+    downsample: 1
+    trajlen: 48
+    num_training_trajs: -1   # use all for each buoyancy
+    num_testing_trajs: -1
+    start_time: 0   # for testing
+    use_embed: False 
+  normalizer:
+    use_norm: true 
+    scaler: normal
+    #stat_path:  /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
+    stat_path: /home/ayz2/data/ns2D/train_ns2D_normal_128_stat.pkl
+
+training:
+  accelerator: gpu
+  check_val_every_n_epoch: 10
+  log_every_n_steps: 32
+  checkpoint: null
+  dataset_size: 2496
+  default_root_dir: logs/
+  devices: [1]
+  strategy: auto
+  accumulate_grad_batches: 1
+  max_epochs: 1000
+  seed: 42
+  ema_decay: null
+  ema_every_n_steps: 1
+
+wandb:
+    name: ACDM_DiT
+    project: ldm_diffusion
+
+model:
+    base_learning_rate: 1.0e-05
+    beta_schedule: linear
+    cosine_s: 0.008
+    linear_start: .0005 #0.0001 * (500/timesteps) from acdm repo
+    linear_end: .1 #0.02 * (500/timesteps) from acdm repo
+    log_every_t: 20
+    timesteps: 100
+    image_size: [128, 128]
+    channels: 6
+    clip_denoised: False
+    parameterization: eps
+    monitor: val/loss
+    dist: False
+
+    scheduler_config:
+        scheduler: cosine
+
+    model_config:
+        image_size: [128, 128]
+        in_channels: 6
+        out_channels: 6
+        model_channels: 256
+        attention_resolutions:
+        - 8
+        num_res_blocks: 2
+        channel_mult:
+        - 1
+        - 2
+        - 4
+        - 4
+        num_heads: 8
+        num_classes: 1
+        dims: 2

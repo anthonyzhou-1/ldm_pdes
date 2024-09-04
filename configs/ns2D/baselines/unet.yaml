@@ -1,0 +1,60 @@
+load_dir: logs/profiles/Unet/
+model_name: unet
+
+data:
+  #data_dir: /home/anthonyz/data/ns2D/
+  data_dir: /home/ayz2/data/NavierStokes-2D-conditoned
+  batch_size: 32
+  num_workers: 20
+  mode: ns2D
+  dataset:
+    #data_path: /data/zijie_data/pde_data/NavierStokes-2D-conditoned
+    data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+    delta_t: 1
+    downsample: 1
+    trajlen: 48
+    num_training_trajs: -1   # use all for each buoyancy
+    num_testing_trajs: -1
+    start_time: 0   # for testing
+    use_embed: False 
+  normalizer:
+    use_norm: true 
+    scaler: normal
+    #stat_path: /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
+    stat_path: /home/ayz2/data/ns2D/train_ns2D_normal_128_stat.pkl
+
+model:
+  name: unet
+  unet:
+    n_input_scalar_components: 3
+    n_input_vector_components: 0
+    n_output_scalar_components: 3
+    n_output_vector_components: 0
+    time_history: 1
+    time_future: 1
+    hidden_channels: 128
+    norm: True
+    ch_mults: [1, 2, 2, 4]
+    embedding_dim: 1
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 5
+  checkpoint: null
+  dataset_size: 2496
+  default_root_dir: logs/
+  devices: [0]
+  dist: false
+  learning_rate: 5.0e-4
+  log_every_n_steps: 100
+  max_epochs: 1000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+  gradient_clip_val: 1.0
+
+wandb:
+  name: Unet_NS2D_large
+  project: ldm_baselines

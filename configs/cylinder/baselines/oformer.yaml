@@ -1,0 +1,52 @@
+load_dir: logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/
+model_path: logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/rollout_loss=0.07.ckpt
+model_name: oformer
+
+data:
+  #data_dir: /dev/shm/mesh/
+  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
+  batch_size: 1
+  num_workers: 20
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    return_cells: True
+  normalizer:
+    use_norm: true 
+    scaler: normal  
+    #stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: False
+
+model:
+  encoder:
+    input_channels: 3 
+    time_window: 1
+    in_emb_dim: 512  
+    out_chanels: 512
+    heads: 16
+    depth: 6
+  decoder:
+    latent_channels: 512
+    out_channels: 3
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 100
+  check_val_every_n_epoch: 25
+  checkpoint: null
+  dataset_size: 1000
+  default_root_dir: logs/
+  devices: [1]
+  dist: false
+  learning_rate: 1.0e-05
+  log_every_n_steps: 10
+  max_epochs: 2000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: OFormer
+  project: ldm_baselines

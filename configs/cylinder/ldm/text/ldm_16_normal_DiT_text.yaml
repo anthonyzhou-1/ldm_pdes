@@ -1,0 +1,140 @@
+load_dir: logs/ldm_cylinder/text/DiT/
+
+data:
+  #data_dir: /dev/shm/mesh/
+  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
+  batch_size: 3
+  num_workers: 20
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    padding: True
+    max_len: 2060
+    use_embed: True
+  normalizer:
+    use_norm: true 
+    scaler: normal  
+    #stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: False
+
+training:
+  accelerator: gpu
+  check_val_every_n_epoch: 10
+  log_every_n_steps: 32
+  checkpoint: null
+  dataset_size: 1000
+  default_root_dir: logs/
+  devices: 3
+  strategy: auto
+  accumulate_grad_batches: 1
+  max_epochs: 1000
+  seed: 42
+  ema_decay: null
+  ema_every_n_steps: 1
+
+wandb:
+    name: LDM_cylinder_DiT_normal_text
+    project: ldm_diffusion
+
+model:
+    base_learning_rate: 5.0e-05
+    beta_schedule: linear
+    cosine_s: 0.008
+    linear_start: 0.00085
+    linear_end: 0.012
+    num_timesteps_cond: 1
+    log_every_t: 200
+    timesteps: 1000
+    image_size: 16
+    channels: 16
+    cond_stage_trainable: True
+    scale_factor: 0.2
+    clip_denoised: False
+    parameterization: eps
+    monitor: val/loss
+    dist: True
+
+    scheduler_config:
+        scheduler: cosine
+        
+    model_config:
+        input_size: [16, 16, 16]
+        patch_size: [2, 2, 2]
+        in_channels: 16
+        hidden_size: 1024
+        depth: 28
+        num_heads: 16
+        mlp_ratio: 4.0
+        learn_sigma: False 
+        use_cross_attn: True 
+        context_dim: 768
+        dim: 3
+
+    first_stage_config:
+        pretrained_path: logs/GINO_autoencoderKL_16_normed_batched2024-07-25T12-14-31/model_epoch=974-val/rec_loss=0.01.ckpt
+        aeconfig:
+          decoder:
+            attn_resolutions:
+            - 16
+            ch_mult:
+            - 1
+            - 2
+            - 4
+            double_z: true
+            dropout: 0.1
+            gno_coord_dim: 3
+            gno_coord_embed_dim: 16
+            gno_mlp_hidden_layers:
+            - 64
+            - 64
+            - 64
+            - 64
+            gno_radius: 0.0425
+            gno_transform_type: linear
+            gno_use_torch_scatter: true
+            hidden_channels: 64
+            in_channels: 16
+            num_res_blocks: 2
+            out_channels: 3
+            resolution: 64
+            use_open3d: true
+            z_channels: 16
+            tanh_out: false
+          double_z: true
+          encoder:
+            attn_resolutions:
+            - 16
+            ch_mult:
+            - 1
+            - 2
+            - 4
+            double_z: true
+            dropout: 0.1
+            gno_coord_dim: 3
+            gno_coord_embed_dim: 16
+            gno_mlp_hidden_layers:
+            - 64
+            - 64
+            - 64
+            - 64
+            gno_radius: 0.0425
+            gno_transform_type: linear
+            gno_use_torch_scatter: true
+            hidden_channels: 64
+            in_channels: 3
+            num_res_blocks: 2
+            out_channels: 16
+            resolution: 64
+            use_open3d: true
+            z_channels: 16
+            tanh_out: false
+          latent_grid_size: 64
+        lossconfig:
+          kl_weight: 2.0e-07
+
+        training:
+            dist: True
+
+    cond_stage_config:
+        conditional: True

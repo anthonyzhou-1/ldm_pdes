@@ -1,0 +1,130 @@
+data:
+  data_dir: /dev/shm/mesh/
+  batch_size: 1
+  num_workers: 20
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    padding: True
+    max_len: 2060
+    use_embed: False
+  normalizer:
+    use_norm: true 
+    scaler: minmax
+
+model:
+  aeconfig:
+    decoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.1
+      gno_coord_dim: 3
+      gno_coord_embed_dim: null
+      gno_mlp_hidden_layers:
+      - 64
+      - 64
+      - 64
+      - 64
+      gno_radius: 0.05
+      gno_transform_type: linear
+      gno_use_torch_scatter: true
+      hidden_channels: 64
+      in_channels: 4
+      num_res_blocks: 2
+      out_channels: 3
+      resolution: 64
+      use_open3d: true
+      z_channels: 4
+      tanh_out: true
+    disc_latent_grid_size: 32
+    double_z: true
+    encoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.1
+      gno_coord_dim: 3
+      gno_coord_embed_dim: null
+      gno_mlp_hidden_layers:
+      - 64
+      - 64
+      - 64
+      - 64
+      gno_radius: 0.05
+      gno_transform_type: linear
+      gno_use_torch_scatter: true
+      hidden_channels: 64
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 4
+      resolution: 64
+      use_open3d: true
+      z_channels: 4
+      tanh_out: true
+    latent_grid_size: 64
+  lossconfig:
+    #disc_ckpt: logs/discriminator.ckpt
+    discriminator:
+      attn_resolutions:
+      - 8
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.0
+      gno_coord_dim: 3
+      gno_coord_embed_dim: null
+      gno_mlp_hidden_layers:
+      - 16
+      - 32
+      - 32
+      gno_radius: 0.05
+      gno_transform_type: nonlinear
+      gno_use_torch_scatter: true
+      hidden_channels: 32
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 4
+      resolution: 32
+      use_open3d: true
+      z_channels: 4
+      tanh_out: true
+    loss:
+      disc_start: 1
+      disc_weight: 0.0
+      kl_weight: 5.0e-06
+      perceptual_weight: 0.0
+    lpips:
+      model_path: /home/ayz2/ldm_fluids/logs/DPOT/model_S.pth
+      model_size: S
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 5
+  checkpoint: null
+  dataset_size: 1000
+  default_root_dir: /home/ayz2/ldm_fluids/logs/
+  devices: 3
+  dist: true
+  learning_rate: 1.0e-05
+  log_every_n_steps: 100
+  max_epochs: 1000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: ddp_find_unused_parameters_true
+
+wandb:
+  name: GINO_autoencoder_4x16x16x16_disc_normed_batched_tanh
+  project: ldm_autoencoder

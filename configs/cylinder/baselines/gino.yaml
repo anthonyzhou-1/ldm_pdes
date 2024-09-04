@@ -1,0 +1,63 @@
+load_dir: logs/GINO_642024-09-01T15-22-49/
+model_path: logs/GINO_642024-09-01T15-22-49/model_epoch=1444-val/rollout_loss=0.06.ckpt
+model_name: gino
+
+data:
+  #data_dir: /dev/shm/mesh/
+  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
+  batch_size: 1
+  num_workers: 16
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    padding: False
+    max_len: 2060
+    use_embed: False
+    return_cells: True
+  normalizer:
+    use_norm: true 
+    scaler: normal
+    #stat_path: /dev/shm/mesh/train_minmax_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: False
+
+model:
+  latent_grid_size: 64
+  gino:
+    in_channels: 3
+    out_channels: 3 
+    projection_channels: 128
+    gno_coord_dim: 2
+    gno_radius: 0.05
+    in_gno_mlp_hidden_layers: [64, 128, 128]
+    out_gno_mlp_hidden_layers: [256, 128]
+    in_gno_transform_type: 'linear'
+    out_gno_transform_type: 'linear'
+    gno_use_open3d: false
+    gno_use_torch_scatter: True
+    fno_in_channels: 3
+    fno_n_modes: [32, 32]
+    fno_hidden_channels: 128
+    fno_lifting_channels: 256
+    fno_projection_channels: 256
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 10
+  check_val_every_n_epoch: 5
+  checkpoint: null
+  dataset_size: 1000
+  default_root_dir: logs/
+  devices: [2]
+  dist: false
+  learning_rate: 1.0e-05
+  log_every_n_steps: 100
+  max_epochs: 2000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: GINO_64
+  project: ldm_baselines
