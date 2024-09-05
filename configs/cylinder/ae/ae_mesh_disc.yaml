@@ -1,0 +1,126 @@
+data:
+  data_dir: /path/to/data/
+  batch_size: 4
+  num_workers: 20
+  mode: cylinder
+  dataset:
+    time_horizon: 25
+    padding: True
+    max_len: 2060
+    use_embed: False
+  normalizer:
+    use_norm: true 
+    scaler: normal
+
+model:
+  aeconfig:
+    decoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.1
+      gno_coord_dim: 3
+      gno_coord_embed_dim: 16
+      gno_mlp_hidden_layers:
+      - 64
+      - 64
+      - 64
+      - 64
+      gno_radius: 0.0425
+      gno_transform_type: linear
+      gno_use_torch_scatter: true
+      hidden_channels: 64
+      in_channels: 16
+      num_res_blocks: 2
+      out_channels: 3
+      resolution: 64
+      use_open3d: true
+      z_channels: 16
+      tanh_out: false
+    double_z: true
+    encoder:
+      attn_resolutions:
+      - 16
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: true
+      dropout: 0.1
+      gno_coord_dim: 3
+      gno_coord_embed_dim: 16
+      gno_mlp_hidden_layers:
+      - 64
+      - 64
+      - 64
+      - 64
+      gno_radius: 0.0425
+      gno_transform_type: linear
+      gno_use_torch_scatter: true
+      hidden_channels: 64
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 16
+      resolution: 64
+      use_open3d: true
+      z_channels: 16
+      tanh_out: false
+    latent_grid_size: 64
+  lossconfig:
+    discriminator:
+      attn_resolutions:
+      - 8
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      double_z: false
+      dropout: 0.0
+      gno_coord_dim: 3
+      gno_coord_embed_dim: null
+      gno_embed_max_positions: null
+      gno_mlp_hidden_layers:
+      - 32
+      - 64
+      - 64
+      gno_radius: 0.05
+      gno_transform_type: nonlinear
+      gno_use_torch_scatter: true
+      hidden_channels: 64
+      in_channels: 3
+      num_res_blocks: 2
+      out_channels: 64
+      resolution: 32
+      use_open3d: true
+      z_channels: 64
+      tanh_out: true
+    loss:
+      disc_start: 1
+      disc_weight: 1.0
+      kl_weight: 5.0e-06
+      perceptual_weight: 0.0
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 5
+  checkpoint: null 
+  dataset_size: 1000
+  default_root_dir: logs/
+  devices: 1
+  dist: true
+  learning_rate: 1.0e-05
+  log_every_n_steps: 32
+  max_epochs: 1000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: wandb_name
+  project: wandb_project
