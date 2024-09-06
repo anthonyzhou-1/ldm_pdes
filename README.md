@@ -21,8 +21,32 @@ pip install scikit-image deepspeed
 If you cannot install pytorch<=2.0.1, please refer to the [Compatibility](#compatibility) section, as some libraries require this version. 
 
 ## Datasets
-Full datasets are available [here.]()
+Full datasets are available [here.]() (coming soon)
 Please refer to the [dataset](dataset) directory for a description of the raw data and dataloading. 
+
+## Model Zoo
+Pretrained models are available [here.]() (coming soon)
+The pretrained models are:
+```
+- Autoencoders:
+    - ae_cylinder.ckpt : autoencoder trained to compress cylinder mesh data across 25 timesteps. Does not use GAN or LPIPS.
+    - ae_ns2D.ckpt: autoencoder trained to compress smoke buoyancy data (48x128x128). Does not use GAN or LPIPS.
+- LDMs:
+    - cylinder flow
+        - ldm_DiT_FF_cylinder.ckpt: ldm model trained to sample a cylinder flow solution conditioned on the first frame
+        - ldm_DiTSmall_FF_cylinder.ckpt: same as previous, just smaller DiT size.
+
+        - ldm_DiT_text_cylinder.ckpt: ldm model trained to sample a cylinder flow solution conditioned on a text prompt
+        - ldm_DiTSmall_text_cylinder.ckpt: same as previous, just smaller DiT size.
+    - ns2D
+        - ldm_DiT_FF_ns2D.ckpt: ldm model trained to sample a smoke buoyancy solution conditioned on the first frame
+        - ldm_DiTSmall_FF_ns2D.ckpt: same as previous, just smaller DiT size.
+        - ldm_DiTLarge_FF_ns2D.ckpt: same as previous, just large DiT size.
+
+        - ldm_DiT_text_ns2D.ckpt: ldm model trained to sample a smoke buoyancy solution conditioned on a text prompt
+        - ldm_DiTSmall_text_ns2D.ckpt: same as previous, just smaller DiT size.
+        - ldm_DiTLarge_text_ns2D.ckpt: same as previous, just large DiT size.
+```
 
 ## Training and Inference
 For more information about the relevant training parameters, see the [configs](configs) directory.
