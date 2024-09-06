@@ -35,14 +35,12 @@ The pretrained models are:
     - cylinder flow
         - ldm_DiT_FF_cylinder.ckpt: ldm model trained to sample a cylinder flow solution conditioned on the first frame
         - ldm_DiTSmall_FF_cylinder.ckpt: same as previous, just smaller DiT size.
-
         - ldm_DiT_text_cylinder.ckpt: ldm model trained to sample a cylinder flow solution conditioned on a text prompt
         - ldm_DiTSmall_text_cylinder.ckpt: same as previous, just smaller DiT size.
     - ns2D
         - ldm_DiT_FF_ns2D.ckpt: ldm model trained to sample a smoke buoyancy solution conditioned on the first frame
         - ldm_DiTSmall_FF_ns2D.ckpt: same as previous, just smaller DiT size.
         - ldm_DiTLarge_FF_ns2D.ckpt: same as previous, just large DiT size.
-
         - ldm_DiT_text_ns2D.ckpt: ldm model trained to sample a smoke buoyancy solution conditioned on a text prompt
         - ldm_DiTSmall_text_ns2D.ckpt: same as previous, just smaller DiT size.
         - ldm_DiTLarge_text_ns2D.ckpt: same as previous, just large DiT size.
@@ -102,7 +100,7 @@ python validate_{cylinder/ns2D}.py --config=path/to/config
 
 For LDM and ACDM models, to conditionally sample from the validation set and evaluate and mean prediction loss:
 ```
-python validation/validate_ldm.py --config=path/to/config
+python validate_ldm.py --config=path/to/config
 ```
 
 Example: sample a medium-size LDM after training by conditioning by all first-frames in a cylinder validation set.
@@ -110,9 +108,16 @@ Example: sample a medium-size LDM after training by conditioning by all first-fr
 python validate_ldm.py --config=configs/cylinder/ldm/text/ldm_DiT_text.yaml
 ```
 
+### FLOPs profiling
+
 Configs passed to validation scripts can also be used to generate a corresponding FLOPs profile: 
 ```
-python validation/profile_flops.py --config=path/to/config
+python profile_flops.py --config=path/to/config
+```
+
+Example: Profile FLOPs of large LDM model on NS2D with text conditioning:
+```
+python profile_flops.py --config=configs/ns2D/ldm/text/ldm_FiTLarge_text.yaml
 ```
 
 ## Text Captioning
