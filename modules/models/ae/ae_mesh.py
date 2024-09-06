@@ -21,11 +21,8 @@ class Autoencoder(L.LightningModule):
         self.encoder = Encoder(**aeconfig["encoder"])
         self.decoder = Decoder(**aeconfig["decoder"])
 
-        if lossconfig["loss"]["disc_weight"] > 0:
-            self.discriminator = Encoder(**lossconfig["discriminator"])
-        else:
-            self.discriminator = None
-            print("No discriminator used")
+        assert lossconfig["loss"]["disc_weight"] > 0 , "Assuming using a discriminator"
+        self.discriminator = Encoder(**lossconfig["discriminator"])
 
         if lossconfig["loss"]["perceptual_weight"] > 0:
             raise NotImplementedError("LPIPS not implemented for unstructured AE")

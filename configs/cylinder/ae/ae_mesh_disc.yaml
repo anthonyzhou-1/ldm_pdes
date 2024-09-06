@@ -74,6 +74,7 @@ model:
       z_channels: 16
       tanh_out: false
     latent_grid_size: 64
+    disc_latent_grid_size: 16
   lossconfig:
     discriminator:
       attn_resolutions:
