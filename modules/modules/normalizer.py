@@ -4,6 +4,7 @@ import pickle
 import os.path
 import torch 
 import numpy as np
+from tqdm import tqdm
 
 class Normalizer:
     def __init__(self,
@@ -26,7 +27,7 @@ class Normalizer:
             print("Statistics loaded from", stat_path)
         else:
             assert dataset is not None, "Data must be provided for normalization"
-            
+            print("Calculating statistics for normalization")
             dataloader = DataLoader(dataset, batch_size = 1, shuffle = False, num_workers=0)
             
             if self.scaler == "normal":
@@ -45,7 +46,7 @@ class Normalizer:
             self.cond_scale = None
 
             max_len = 0
-            for batch in dataloader:
+            for batch in tqdm(dataloader):
                 data = batch["x"]
 
                 pad_mask = batch.get("pad_mask", None)
