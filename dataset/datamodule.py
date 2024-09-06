@@ -4,6 +4,7 @@ from dataset.cylinder import CylinderMeshDataset
 from dataset.smoke_data import train_datapipe_ns_cond, valid_datapipe_ns_cond
 from modules.modules.normalizer import Normalizer
 from modules.utils import Struct
+import copy
 
 class FluidsDataModule(L.LightningDataModule):
     def __init__(self, 
@@ -12,8 +13,6 @@ class FluidsDataModule(L.LightningDataModule):
         super().__init__()
         dataset_config = dataconfig["dataset"]
         normalizer_config = dataconfig["normalizer"]
-        
-        self.data_dir = dataconfig["data_dir"]
         self.batch_size = dataconfig["batch_size"]
         self.num_workers = dataconfig["num_workers"]
         self.mode = dataconfig["mode"]
@@ -29,10 +28,11 @@ class FluidsDataModule(L.LightningDataModule):
             self.val_dataset = valid_datapipe_ns_cond(Struct(**dataset_config))
             
         elif self.mode == "cylinder":
-            self.train_dataset = CylinderMeshDataset(data_dir = self.data_dir + "train_downsampled_labeled.h5",
-                                                    **dataset_config)
-            self.val_dataset = CylinderMeshDataset(data_dir = self.data_dir + "valid_downsampled_labeled.h5",
-                                                    **dataset_config)
+            data_dir = copy.copy(dataconfig['dataset']["data_dir"])
+            dataconfig['dataset']["data_dir"] = data_dir + "/train_downsampled_labeled.h5"
+            self.train_dataset = CylinderMeshDataset(**dataset_config)
+            dataconfig['dataset']["data_dir"] = data_dir + "/valid_downsampled_labeled.h5"
+            self.val_dataset = CylinderMeshDataset(**dataset_config)
             
         self.normalizer = Normalizer(dataset=self.train_dataset,
                                      **normalizer_config)

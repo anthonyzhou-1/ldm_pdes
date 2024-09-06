@@ -1,21 +1,25 @@
 data:
-  data_dir: /home/ayz2/data/NavierStokes-2D-conditoned
-  batch_size: 16
-  num_workers: 20
-  mode: ns2D
-  dataset:
-    data_path: /home/ayz2/data/NavierStokes-2D-conditoned
-    delta_t: 2
-    downsample: 2
-    trajlen: 56
-    num_training_trajs: -1   # use all for each buoyancy
-    num_testing_trajs: -1
-    start_time: 0   # for testing
-  normalizer:
-    use_norm: true 
-    scaler: normal 
-    stat_path: /home/ayz2/data/ns2D/NavierStokes-2D-cond/train_normal_stat.pkl
-    conditional: True
+    #data_dir: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned/
+    data_dir: /home/ayz2/data/NavierStokes-2D-conditoned/
+    batch_size: 4
+    num_workers: 16
+    mode: ns2D
+    drop_last: True
+    dataset:
+      #data_path: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned
+      data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+      delta_t: 1
+      downsample: 1
+      trajlen: 48
+      num_training_trajs: -1   # use all for each buoyancy
+      num_testing_trajs: -1
+      start_time: 0   # for testing
+      use_embed: True
+    normalizer:
+      use_norm: true 
+      scaler: normal
+      #stat_path: /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
+      stat_path: /home/ayz2/data/ns2D/train_ns2D_normal_128_stat.pkl
 
 model:
   aeconfig:
