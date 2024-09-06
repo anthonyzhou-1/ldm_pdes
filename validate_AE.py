@@ -56,24 +56,24 @@ def validate_ns2D(config, device):
         for batch in tqdm(valid_loader):
             batch = {k: v.to(pl_module.device) for k, v in batch.items()}
             rec = pl_module.validation_step(batch, 0, eval=True)
-        x = batch["x"].detach().cpu()    # b nt nx ny c
-        rec = rec.detach().cpu()         # b nt nx ny c
+            x = batch["x"].detach().cpu()    # b nt nx ny c
+            rec = rec.detach().cpu()         # b nt nx ny c
 
-        if idx % plot_interval == 0:
-            u_batch = x[0, :, :, :, -1]      # nt nx ny, density
-            rec_batch = rec[0, :, :, :, -1]  # nt nx ny
-            
-            path_u = root_dir + f"plot_{idx}.png"
-            
-            plot_grid(u_batch, rec_batch, n_t=5, path=path_u)
+            if idx % plot_interval == 0:
+                u_batch = x[0, :, :, :, -1]      # nt nx ny, density
+                rec_batch = rec[0, :, :, :, -1]  # nt nx ny
+                
+                path_u = root_dir + f"plot_{idx}.png"
+                
+                plot_grid(u_batch, rec_batch, n_t=5, path=path_u)
 
-            save_dict = {"x": x, "rec": rec}
+                save_dict = {"x": x, "rec": rec}
 
-            with open(root_dir + f"results_{idx}.pkl", "wb") as f:
-                pickle.dump(save_dict, f)
-        loss = F.l1_loss(x, rec) 
-        all_losses.append(loss)
-        idx += 1
+                with open(root_dir + f"results_{idx}.pkl", "wb") as f:
+                    pickle.dump(save_dict, f)
+            loss = F.l1_loss(x, rec) 
+            all_losses.append(loss)
+            idx += 1
 
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
