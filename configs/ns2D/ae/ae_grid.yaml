@@ -18,7 +18,7 @@ data:
       num_training_trajs: -1   # use all for each buoyancy
       num_testing_trajs: -1
       start_time: 0   # for testing
-      use_embed: True
+      use_embed: False
     normalizer:
       use_norm: true 
       scaler: normal
