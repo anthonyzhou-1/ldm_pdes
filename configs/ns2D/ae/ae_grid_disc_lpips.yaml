@@ -94,7 +94,7 @@ training:
   checkpoint: null
   dataset_size: 2496
   default_root_dir: /home/ayz2/ldm_fluids/logs/
-  devices: [2]
+  devices: 1
   dist: false
   learning_rate: 1.0e-05
   log_every_n_steps: 100

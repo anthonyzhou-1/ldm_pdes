@@ -29,7 +29,7 @@ training:
   checkpoint: logs/Grid_AE_16_norm_large_FT2024-08-08T10-59-18/last.ckpt
   dataset_size: 2496
   default_root_dir: /home/anthonyz/ldm_fluids/logs/
-  devices: 3
+  devices: 1
   dist: true
   learning_rate: 1.0e-05
   log_every_n_steps: 100
