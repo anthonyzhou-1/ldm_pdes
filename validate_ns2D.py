@@ -17,7 +17,7 @@ def main(args):
     dataconfig = config['data']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
-    root_dir = load_dir + "eval_new/"
+    root_dir = load_dir + "eval/"
     os.makedirs(root_dir, exist_ok=True)
 
     modelconfig = config['model']

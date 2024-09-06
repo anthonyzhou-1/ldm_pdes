@@ -29,19 +29,14 @@ For more information about the relevant training parameters, see the [configs](c
 Before running an experiment it is recommended to make a logs directory for model outputs. (mkdir root/logs)
 
 ### Autoencoder
-To train an autoencoder with only KL regularization (No GAN or LPIPS):
-```
-python train_AE_KL.py --config=path/to/config
-```
-
-To train an autoencoder with all possible methods defined by a config:
+To train an autoencoder (supports KL regularization, GAN, LPIPS):
 ```
 python train_AE.py --config=path/to/config
 ```
 
 Example: train an autoencoder for the cylinder dataset without GAN or LPIPS
 ```
-python train_AE_KL.py --config=configs/cylinder/ae/ae_mesh.yaml
+python train_AE.py --config=configs/cylinder/ae/ae_mesh.yaml
 ```
 
 ### Latent Diffusion Model

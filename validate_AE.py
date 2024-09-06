@@ -1,37 +1,107 @@
 from dataset.datamodule import FluidsDataModule
-from modules.models.ae.ae_mesh import Autoencoder, AutoencoderKL
 import torch 
 from modules.utils import get_yaml
-from modules.modules.plotting import plot_mesh
+from modules.modules.plotting import plot_mesh, plot_grid
 import pickle 
 import torch.nn.functional as F
 import os
 from tqdm import tqdm
 import argparse 
 
-def validate_AE(config, device):
-    config=get_yaml("./configs/unstructured/ae_gino_16x16x16x16_normed_batched.yaml")
-
+def validate_ns2D(config, device):
     aeconfig = config['model']['aeconfig']
     lossconfig = config['model']['lossconfig']
     trainconfig = config['training']
     dataconfig = config['data']
 
-    root_dir = f"./logs/eval/val_ae/"
+    root_dir = config['load_dir'] + "eval/"
+    os.makedirs(root_dir, exist_ok=True)
+
+    datamodule = FluidsDataModule(**dataconfig)
+    from modules.models.ae.ae_grid import Autoencoder, AutoencoderKL
+    if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
+        ae = Autoencoder
+    else:
+        ae = AutoencoderKL
+
+    pl_module = ae(aeconfig, 
+                    lossconfig, 
+                    trainconfig,
+                    normalizer=datamodule.normalizer,
+                    batch_size=dataconfig["batch_size"],
+                    accumulation_steps=trainconfig["accumulate_grad_batches"],)
+    
+    path = config["model_path"]
+    checkpoint = torch.load(path, map_location=device)
+    pl_module.load_state_dict(checkpoint["state_dict"])
+    pl_module.eval()
+    pl_module = pl_module.to(device)
+
+    print("AE Model loaded from: ", path)
+    valid_loader = datamodule.val_dataloader()
+
+    num_samples = 32*19
+
+    plot_interval = 1
+    all_losses = []
+
+    print("Number of samples: ", num_samples)
+    print("Plot interval: ", plot_interval)
+
+    idx = 0 
+    with torch.no_grad():
+        for batch in tqdm(valid_loader):
+            batch = {k: v.to(pl_module.device) for k, v in batch.items()}
+            rec = pl_module.validation_step(batch, 0, eval=True)
+        x = batch["x"].detach().cpu()    # b nt nx ny c
+        rec = rec.detach().cpu()         # b nt nx ny c
+
+        if idx % plot_interval == 0:
+            u_batch = x[0, :, :, :, -1]      # nt nx ny, density
+            rec_batch = rec[0, :, :, :, -1]  # nt nx ny
+            
+            path_u = root_dir + f"/plot_{idx}.png"
+            
+            plot_grid(u_batch, rec_batch, n_t=5, path=path_u)
+
+            save_dict = {"x": x, "rec": rec}
+
+            with open(root_dir + f"/results_{idx}.pkl", "wb") as f:
+                pickle.dump(save_dict, f)
+        loss = F.l1_loss(x, rec) 
+        all_losses.append(loss)
+        idx += 1
+
+    with open(root_dir + "losses.pkl", "wb") as f:
+        pickle.dump(all_losses, f)
+    
+    print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+
+def validate_cylinder(config, device):
+    aeconfig = config['model']['aeconfig']
+    lossconfig = config['model']['lossconfig']
+    trainconfig = config['training']
+    dataconfig = config['data']
+
+    root_dir = config['load_dir'] + "eval/"
     os.makedirs(root_dir, exist_ok=True)
 
     datamodule = FluidsDataModule(**dataconfig)
     normalizer = datamodule.normalizer
+    from modules.models.ae.ae_mesh import AutoencoderKL, Autoencoder
+    if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
+        ae = Autoencoder
+    else:
+        ae = AutoencoderKL
 
-    pl_module = AutoencoderKL(aeconfig, 
-                            lossconfig, 
-                            trainconfig,
-                            normalizer=datamodule.normalizer,
-                            batch_size=dataconfig["batch_size"],
-                            accumulation_steps=trainconfig["accumulate_grad_batches"],
-                            padding=dataconfig["padding"],)
+    pl_module = ae(aeconfig, 
+                    lossconfig, 
+                    trainconfig,
+                    normalizer=datamodule.normalizer,
+                    batch_size=dataconfig["batch_size"],
+                    accumulation_steps=trainconfig["accumulate_grad_batches"],)
 
-    path = "logs/GINO_normal_16/rec_loss=0.01.ckpt"
+    path = config["model_path"]
     checkpoint = torch.load(path, map_location=device)
     pl_module.load_state_dict(checkpoint["state_dict"])
     pl_module.eval()
@@ -76,11 +146,9 @@ def validate_AE(config, device):
             u_batch = x[0, :, :, 0] # t, m
             rec_batch = rec[0, :, :, 0] # t, m
             
-            path_u = root_dir + f"/u_{idx}.png"
-            path_rec = root_dir + f"/rec_{idx}.png"
+            path_u = root_dir + f"/plot_{idx}.png"
             
-            plot_mesh(u_batch, mesh_pos_batch, cells_batch, n_t=5, path=path_u)
-            plot_mesh(rec_batch, mesh_pos_batch, cells_batch, n_t=5, path=path_rec)
+            plot_mesh(u_batch, mesh_pos_batch, cells_batch, n_t=5, rec=rec_batch, path=path_u)
 
         loss = F.l1_loss(x, rec) 
         all_losses.append(loss)
@@ -91,8 +159,15 @@ def validate_AE(config, device):
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
 
 def main(args):
-    config = get_yaml(args.config)
-    validate_AE(config, args.device)
+    config=get_yaml(args.config)
+    mode = config['data']['mode'] # get mode
+    config["training"]['devices'] = 1 # set devices to 1
+    device = args.device
+
+    if mode == "cylinder":
+        validate_cylinder(config, device)
+    elif mode == "ns2D":
+        validate_ns2D(config, device)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an AE')
