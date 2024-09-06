@@ -93,7 +93,7 @@ training:
   check_val_every_n_epoch: 5
   checkpoint: null
   dataset_size: 2496
-  default_root_dir: /home/ayz2/ldm_fluids/logs/
+  default_root_dir: logs/
   devices: 1
   dist: false
   learning_rate: 1.0e-05

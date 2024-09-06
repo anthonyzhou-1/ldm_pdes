@@ -21,23 +21,6 @@ data:
       #stat_path: /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
       stat_path: /home/ayz2/data/ns2D/train_ns2D_normal_128_stat.pkl
 
-training:
-  seed: 42
-  accelerator: gpu
-  accumulate_grad_batches: 1
-  check_val_every_n_epoch: 5
-  checkpoint: logs/Grid_AE_16_norm_large_FT2024-08-08T10-59-18/last.ckpt
-  dataset_size: 2496
-  default_root_dir: /home/anthonyz/ldm_fluids/logs/
-  devices: 1
-  dist: true
-  learning_rate: 1.0e-05
-  log_every_n_steps: 100
-  max_epochs: 1000
-  pct_start: 0.15
-  scheduler: Cosine
-  strategy: auto
-
 model:
   aeconfig:
     decoder:
@@ -78,6 +61,23 @@ model:
       tanh_out: false
   lossconfig:
     kl_weight: 1.0e-07
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 5
+  checkpoint: null
+  dataset_size: 2496
+  default_root_dir: logs/
+  devices: 1
+  dist: true
+  learning_rate: 1.0e-05
+  log_every_n_steps: 100
+  max_epochs: 1000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
 
 wandb:
   name: wandb_name

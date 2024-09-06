@@ -56,6 +56,7 @@ class LPIPS_DPOT(nn.Module):
         assert x.shape[1] == nc, f"expecting dimension {nc}, got {x.shape[1]}"
 
         if x.shape[-1] != 128:
+            # if the input is not 128x128, resize it (DPOT expects 128x128)
             c = x.shape[1]
             x = rearrange(x, 'b c t x y -> b (c t) x y')
             x = F.interpolate(x, size=128, mode='bilinear', align_corners=False)
@@ -63,6 +64,7 @@ class LPIPS_DPOT(nn.Module):
 
         x = rearrange(x, 'b c t x y -> b x y t c')
         if x.shape[1] != x.shape[2]:
+            # if the input is not square, make it square
             x = repeat(x, 'b x y t c -> b x (n y) t c', n=4)
         
         return x
