@@ -8,11 +8,11 @@ To install requirements:
 conda create -n "my_env" 
 conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 torchdata=0.6.0 -c pytorch -c nvidia 
 conda install pytorch-scatter -c pyg
-conda install conda-forge::pytorch-lightning
+conda install lightning -c conda-forge
 pip install transformers 
 pip install wandb h5py tensorboard einops open3d sparse-dot-mkl timm 
 ```
-
+Some packages are just easier to install with pip vs conda.
 Optional installs for image captioning and FLOPs profiling:
 ```
 pip install scikit-image deepspeed
