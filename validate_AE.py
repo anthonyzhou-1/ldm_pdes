@@ -44,13 +44,14 @@ def validate_ns2D(config, device):
 
     num_samples = 32*19
 
-    plot_interval = 1
+    plot_interval = 10
     all_losses = []
 
     print("Number of samples: ", num_samples)
     print("Plot interval: ", plot_interval)
 
     idx = 0 
+    print("Saving plots to: ", root_dir)
     with torch.no_grad():
         for batch in tqdm(valid_loader):
             batch = {k: v.to(pl_module.device) for k, v in batch.items()}
@@ -118,9 +119,12 @@ def validate_cylinder(config, device):
 
     num_samples = len(valid_loader.dataset)
 
-    plot_interval = 1
+    plot_interval = 10
     all_losses = []
 
+    print("Number of samples: ", num_samples)
+    print("Plot interval: ", plot_interval)
+    print("Saving plots to: ", root_dir)
     for idx in tqdm(range(0, num_samples)):
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
         cells = batch.pop("cells")
