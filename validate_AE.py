@@ -35,7 +35,7 @@ def validate_ns2D(config, device):
     checkpoint = torch.load(path, map_location=device)
     if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
         checkpoint = checkpoint["state_dict"]
-    pl_module.load_state_dict(checkpoint["state_dict"])
+    pl_module.load_state_dict(checkpoint)
     pl_module.eval()
     pl_module = pl_module.to(device)
 
@@ -105,7 +105,10 @@ def validate_cylinder(config, device):
 
     path = config["model_path"]
     checkpoint = torch.load(path, map_location=device)
-    pl_module.load_state_dict(checkpoint["state_dict"])
+    if "state_dict" in checkpoint.keys():
+        checkpoint = checkpoint["state_dict"]
+
+    pl_module.load_state_dict(checkpoint)
     pl_module.eval()
     pl_module = pl_module.to(device)
 
