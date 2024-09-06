@@ -1,7 +1,7 @@
 data:
     #data_dir: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned/
     data_dir: /home/ayz2/data/NavierStokes-2D-conditoned/
-    batch_size: 4
+    batch_size: 1
     num_workers: 16
     mode: ns2D
     drop_last: True
