@@ -2,7 +2,7 @@ from dataset.datamodule import FluidsDataModule
 from modules.models.baselines.ns2D import NS2DModule
 import torch 
 from modules.utils import get_yaml
-from modules.modules.plotting import plot_mesh, plot_grid
+from modules.modules.plotting import plot_grid
 import pickle 
 import torch.nn.functional as F
 import os
@@ -61,12 +61,12 @@ def main(args):
                 plot_grid(x[0, :, :, :, -1], rec[0, :, :, :, -1], n_t=5, path=root_dir + f"/plot_{idx}.png")
 
                 plt.plot(errors)
-                plt.savefig(root_dir + f"/errors_{idx}.png")
+                plt.savefig(root_dir + f"errors_{idx}.png")
                 plt.close()
 
                 save_dict = {"x": x, "rec": rec, "errors": errors}
 
-                with open(root_dir + f"/results_{idx}.pkl", "wb") as f:
+                with open(root_dir + f"results_{idx}.pkl", "wb") as f:
                     pickle.dump(save_dict, f)
 
             rec_loss = F.l1_loss(x, rec)

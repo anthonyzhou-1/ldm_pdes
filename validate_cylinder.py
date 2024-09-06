@@ -88,17 +88,17 @@ def validate_cylinder(config, device):
             u_batch = x[:, :, 0] # t, m
             rec_batch = rec[:, :, 0] # t, m
             
-            path_u = root_dir + f"/result_{idx}.png"
+            path_u = root_dir + f"result_{idx}.png"
             
             plot_mesh(u_batch, mesh_pos_batch, cells_batch, n_t=5, path=path_u, rec=rec_batch)
 
             plt.plot(errors)
-            plt.savefig(root_dir + "/errors.png")
+            plt.savefig(root_dir + f"errors_{idx}.png")
             plt.close()
 
             save_dict = {"x": x, "rec": rec, "mesh_pos": mesh_pos_batch, "cells": cells_batch, "errors": errors}
 
-            with open(root_dir + f"/results_{idx}.pkl", "wb") as f:
+            with open(root_dir + f"results_{idx}.pkl", "wb") as f:
                 pickle.dump(save_dict, f)
 
         rec_loss = F.l1_loss(x, rec)

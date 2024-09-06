@@ -89,7 +89,7 @@ def validate_cylinder(config, device):
                     text_file.write(prompt)
                 log['prompt'] = prompt
 
-            with open(root_dir + f"/log_{idx}.pkl", "wb") as f:
+            with open(root_dir + f"log_{idx}.pkl", "wb") as f:
                 # save on memory
                 del log["reconstruction"]
                 pickle.dump(log, f)

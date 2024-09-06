@@ -1,3 +1,7 @@
+load_dir: logs/GINO_autoencoderKL_16_normed_batched2024-07-25T12-14-31/model_epoch=974-val/
+model_path: logs/GINO_autoencoderKL_16_normed_batched2024-07-25T12-14-31/model_epoch=974-val/rec_loss=0.01.ckpt
+model_name: ae
+
 data:
   batch_size: 4
   num_workers: 16

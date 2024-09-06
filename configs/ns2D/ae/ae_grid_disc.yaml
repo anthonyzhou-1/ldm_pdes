@@ -1,3 +1,7 @@
+load_dir: logs/ns2D/
+model_path: logs/ns2D/new_rec_loss=0.01.ckpt
+model_name: ae
+
 data:
     #data_dir: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned/
     data_dir: /home/ayz2/data/NavierStokes-2D-conditoned/

@@ -60,13 +60,13 @@ def validate_ns2D(config, device):
             u_batch = x[0, :, :, :, -1]      # nt nx ny, density
             rec_batch = rec[0, :, :, :, -1]  # nt nx ny
             
-            path_u = root_dir + f"/plot_{idx}.png"
+            path_u = root_dir + f"plot_{idx}.png"
             
             plot_grid(u_batch, rec_batch, n_t=5, path=path_u)
 
             save_dict = {"x": x, "rec": rec}
 
-            with open(root_dir + f"/results_{idx}.pkl", "wb") as f:
+            with open(root_dir + f"results_{idx}.pkl", "wb") as f:
                 pickle.dump(save_dict, f)
         loss = F.l1_loss(x, rec) 
         all_losses.append(loss)
@@ -146,7 +146,7 @@ def validate_cylinder(config, device):
             u_batch = x[0, :, :, 0] # t, m
             rec_batch = rec[0, :, :, 0] # t, m
             
-            path_u = root_dir + f"/plot_{idx}.png"
+            path_u = root_dir + f"plot_{idx}.png"
             
             plot_mesh(u_batch, mesh_pos_batch, cells_batch, n_t=5, rec=rec_batch, path=path_u)
 
