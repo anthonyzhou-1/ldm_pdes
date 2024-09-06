@@ -1,5 +1,5 @@
 # Datasets
-Data available [here]()
+Datasets available [here]()
 ## Dataloading
 We use datamodules from Pytorch lightning to handle the dataset creation and dataloading. In particular, the datasets generally return a dictionary with the relevant values, controlled by flags in the config files. The basic keys that are generated are:
 ```

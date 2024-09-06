@@ -6,10 +6,11 @@ To install requirements:
 
 ```setup
 conda create -n "my_env" 
-conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 torchdata=0.6.0 -c pytorch -c nvidia
+conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 torchdata=0.6.0 -c pytorch -c nvidia 
 conda install pytorch-scatter -c pyg
-conda install lightning wandb h5py tensorboard transformers -c conda-forge
-pip install einops open3d sparse-dot-mkl timm 
+conda install conda-forge::pytorch-lightning
+pip install transformers 
+pip install wandb h5py tensorboard einops open3d sparse-dot-mkl timm 
 ```
 
 Optional installs for image captioning and FLOPs profiling:
@@ -24,7 +25,79 @@ Full datasets are available [here.]()
 Please refer to the [dataset](dataset) directory for a description of the raw data and dataloading. 
 
 ## Training and Inference
-Please refer to the [scripts](scripts) directory. Also, the [configs](configs) directory has details on different training/inference settings. 
+For more information about the relevant training parameters, see the [configs](configs) directory.
+Before running an experiment it is recommended to make a logs directory for model outputs. (mkdir root/logs)
+
+### Autoencoder
+To train an autoencoder with only KL regularization (No GAN or LPIPS):
+```
+python train_AE_KL.py --config=path/to/config
+```
+
+To train an autoencoder with all possible methods defined by a config:
+```
+python train_AE.py --config=path/to/config
+```
+
+Example: train an autoencoder for the cylinder dataset without GAN or LPIPS
+```
+python train_AE_KL.py --config=configs/cylinder/ae/ae_mesh.yaml
+```
+
+### Latent Diffusion Model
+To train a latent diffusion model:
+```
+python train_ldm.py --config=path/to/config
+```
+
+Example: train a small-size LDM for the NS2D dataset with text conditioning
+```
+python train_ldm.py --config=configs/ns2D/ldm/text/ldm_DiTSmall_text.yaml
+```
+
+### Baselines
+To train a baseline model for the cylinder flow problem:
+```
+python train_{gino/gnn/oformer}.py --config=path/to/config 
+```
+To train a baseline model for the smoke buoyancy (ns2D) problem:
+```
+python train_{ns2D/acdm}.py --config=path/to/config
+```
+Note that the FNO, Unet, and Resnet models all use the same script (train_ns2D.py).
+Example: train a FNO baseline on the NS2D dataset
+```
+python train_ns2D.py --config=configs/ns2D/baselines/fno.yaml
+```
+
+### Validation/Inference
+To generate reconstructed samples on the validation set and evaluate a mean reconstruction loss:
+```
+python validate_AE.py --config=path/to/config
+```
+
+For baselines (not including ACDM), to generate predicted samples on the validation set and evaluate a mean prediction loss:
+```
+python validate_{cylinder/ns2D}.py --config=path/to/config
+```
+
+For LDM and ACDM models, to conditionally sample from the validation set and evaluate and mean prediction loss:
+```
+python validation/validate_ldm.py --config=path/to/config
+```
+
+Example: sample a medium-size LDM after training by conditioning by all first-frames in a cylinder validation set.
+```
+python validate_ldm.py --config=configs/cylinder/ldm/text/ldm_DiT_text.yaml
+```
+
+Configs passed to validation scripts can also be used to generate a corresponding FLOPs profile: 
+```
+python validation/profile_flops.py --config=path/to/config
+```
+
+## Text Captioning
+Scripts for captioning PDE simulations are in the [text](text) directory, along with some details.
 
 ## Compatibility
 Some parts of the code relies on [Open3D](https://www.open3d.org/). Specifically, Open3D requires a version of torch <=2.0.1; this option can be disabled in the config files if the installation is not compatible, and the codebase can fall back to a native PyTorch implementation. This is slower and requires more memory, but can be set with the flag use_open3d=False in all configs.
@@ -48,7 +121,7 @@ echo "def dill_available(): return False" > _import_utils.py
 
 ## SLURM Users
 For those leveraging multiprocessing on a SLURM cluster, there are some additional considerations:
-- If you plan on training the model with text capabilities, it is recommended to manually download the pretrained LLM weights (RoBERTa) and load them locally, as downloading weights on the fly may cause the script to hang. 
+- If you plan on training the model with text capabilities, it is recommended to manually download the pretrained LLM weights (RoBERTa) and load them [locally](https://stackoverflow.com/questions/64001128/load-a-pre-trained-model-from-disk-with-huggingface-transformers), as downloading weights on the fly may cause the script to hang. RoBERTa weights can be found [here](https://huggingface.co/FacebookAI/roberta-base/tree/main). 
 
 ```
 # On the fly. Might cause the script to hang.

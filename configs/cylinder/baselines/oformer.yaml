@@ -5,7 +5,7 @@ model_name: oformer
 data:
   #data_dir: /dev/shm/mesh/
   data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
-  batch_size: 1
+  batch_size: 1 # only works with batch size of 1
   num_workers: 20
   mode: cylinder
   dataset:
@@ -14,8 +14,7 @@ data:
   normalizer:
     use_norm: true 
     scaler: normal  
-    #stat_path: /dev/shm/mesh/train_normal_stat.pkl
-    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    stat_path: /dev/shm/mesh/train_normal_stat.pkl
     conditional: False
 
 model:
