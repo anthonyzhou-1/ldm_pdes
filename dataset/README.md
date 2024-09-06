@@ -1,4 +1,5 @@
 # Datasets
+Data available [here]()
 ## Dataloading
 We use datamodules from Pytorch lightning to handle the dataset creation and dataloading. In particular, the datasets generally return a dictionary with the relevant values, controlled by flags in the config files. The basic keys that are generated are:
 ```
@@ -56,5 +57,5 @@ Additionally, the datamodules store a normalizer object to scale and unscale inp
         - 'y': shape (32, resolution_y). Contains the y-position for each position along the y-axis for each sample.
         - 'text_labels' (keys: '0', '1', ..., '31')
             - '0': shape (). Contains the text caption for the 0-th sample. Read with ['text_labels']['0'].asstr()[()]
-            - '1', '2', ... '31': Contains text cpation for the n-th sample.
+            - '1', '2', ... '31': Contains text caption for the n-th sample.
 ```

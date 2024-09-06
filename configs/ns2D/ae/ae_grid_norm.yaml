@@ -13,7 +13,9 @@ data:
     start_time: 0   # for testing
   normalizer:
     use_norm: true 
-    scaler: normal
+    scaler: normal 
+    stat_path: /home/ayz2/data/ns2D/NavierStokes-2D-cond/train_normal_stat.pkl
+    conditional: True
 
 model:
   aeconfig:

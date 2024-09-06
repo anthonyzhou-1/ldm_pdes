@@ -41,11 +41,11 @@ training:
   checkpoint: null
   dataset_size: 2496
   default_root_dir: logs/
-  devices: [1]
+  devices: 1
   dist: false
-  learning_rate: 5.0e-04
+  learning_rate: 1.0e-04
   log_every_n_steps: 100
-  max_epochs: 1000
+  max_epochs: 250
   pct_start: 0.15
   scheduler: Cosine
   strategy: auto

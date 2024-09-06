@@ -10,7 +10,10 @@ data:
     use_embed: False
   normalizer:
     use_norm: true 
-    scaler: normal
+    scaler: normal  
+    #stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: False
 
 model:
   aeconfig:

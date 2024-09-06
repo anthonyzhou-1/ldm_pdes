@@ -17,7 +17,8 @@ data:
   normalizer:
     use_norm: true 
     scaler: normal
-    stat_path: /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
+    conditional: True
 
 training:
   seed: 42
