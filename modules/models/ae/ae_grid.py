@@ -21,6 +21,9 @@ class Autoencoder(L.LightningModule):
 
         self.encoder = CNN_Encoder(**aeconfig["encoder"])
         self.decoder = CNN_Decoder(**aeconfig["decoder"])
+
+        assert "discriminator" in lossconfig, "Discriminator must be specified in lossconfig"
+
         if "attn_resolutions" in lossconfig["discriminator"]:
             self.discriminator = CNN_Encoder(**lossconfig["discriminator"])
         else:
