@@ -54,7 +54,7 @@ class LPIPS_DPOT(nn.Module):
         mask = x[:, :-1, :, :, :]
         x = torch.cat([u, v, mask], dim=1)
 
-        assert x.shape[1] == nc # check if the channel dimension is the same
+        assert x.shape[1] == nc, f"expecting dimension {nc}, got {x.shape[1]}"
 
         if x.shape[-1] != 128:
             c = x.shape[1]
