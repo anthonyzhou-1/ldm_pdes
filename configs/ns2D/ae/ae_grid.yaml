@@ -1,5 +1,5 @@
 load_dir: logs/ns2D/
-model_path: logs/ns2D/new_rec_loss=0.01.ckpt
+model_path: /home/ayz2/ldm_fluids/logs/ns2D/new_rec_loss=0.01.ckpt
 model_name: ae
 
 data:

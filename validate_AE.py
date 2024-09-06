@@ -33,6 +33,8 @@ def validate_ns2D(config, device):
     
     path = config["model_path"]
     checkpoint = torch.load(path, map_location=device)
+    if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
+        checkpoint = checkpoint["state_dict"]
     pl_module.load_state_dict(checkpoint["state_dict"])
     pl_module.eval()
     pl_module = pl_module.to(device)
