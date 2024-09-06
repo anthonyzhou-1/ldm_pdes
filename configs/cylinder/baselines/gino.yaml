@@ -3,7 +3,6 @@ model_path: logs/GINO_642024-09-01T15-22-49/model_epoch=1444-val/rollout_loss=0.
 model_name: gino
 
 data:
-  #data_dir: /dev/shm/mesh/
   data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
   batch_size: 1 # only works with batch size of 1
   num_workers: 16
@@ -17,7 +16,7 @@ data:
   normalizer:
     use_norm: true 
     scaler: normal
-    stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
     conditional: False
 
 model:
@@ -48,7 +47,7 @@ training:
   checkpoint: null
   dataset_size: 1000
   default_root_dir: logs/
-  devices: [2]
+  devices: 1
   dist: false
   learning_rate: 1.0e-05
   log_every_n_steps: 100

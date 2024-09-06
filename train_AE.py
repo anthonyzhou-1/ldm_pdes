@@ -47,19 +47,27 @@ def main(args):
     datamodule = FluidsDataModule(dataconfig)
 
     if dataconfig["mode"] == "cylinder":
-        from modules.models.ae.ae_mesh import Autoencoder
+        from modules.models.ae.ae_mesh import AutoencoderKL, Autoencoder
+        if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
+            ae = Autoencoder
+        else:
+            ae = AutoencoderKL
         eval_callback = MeshPlottingCallback()
     else:
-        from modules.models.ae.ae_grid import Autoencoder
+        from modules.models.ae.ae_grid import Autoencoder, AutoencoderKL
+        if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
+            ae = Autoencoder
+        else:
+            ae = AutoencoderKL
         eval_callback = GridPlottingCallback()
 
-    model = Autoencoder(aeconfig, 
-                        lossconfig, 
-                        trainconfig,
-                        normalizer=datamodule.normalizer,
-                        batch_size=dataconfig["batch_size"],
-                        accumulation_steps=trainconfig["accumulate_grad_batches"],)
-
+    model = ae(aeconfig, 
+            lossconfig, 
+            trainconfig,
+            normalizer=datamodule.normalizer,
+            batch_size=dataconfig["batch_size"],
+            accumulation_steps=trainconfig["accumulate_grad_batches"],)
+    
     trainer = L.Trainer(devices = trainconfig["devices"],
                         accelerator = trainconfig["accelerator"],
                         check_val_every_n_epoch = trainconfig["check_val_every_n_epoch"],
