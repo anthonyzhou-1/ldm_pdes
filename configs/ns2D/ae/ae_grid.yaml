@@ -7,7 +7,7 @@ data:
     drop_last: True
     dataset:
       #data_path: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned
-      data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+      data_dir: /home/ayz2/data/NavierStokes-2D-conditoned
       delta_t: 1
       downsample: 1
       trajlen: 48

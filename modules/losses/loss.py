@@ -106,7 +106,7 @@ class LPIPSWithDiscriminator(nn.Module):
                 mask = repeat(mask, 'b 1 1 nx ny -> b 1 nt nx ny', nt=inputs.shape[2])
             else:
                 b, _, nt, nx, ny = inputs.shape
-                mask = torch.ones(b, 1, nt, nx, ny, device=inputs.device) # no mask for lpips
+                mask = torch.ones(b, 1, nt, nx, ny, device=inputs.device) # add mask for lpips
 
             inputs_lpips = torch.cat((inputs, mask), dim=1)
             rec_lpips = torch.cat((reconstructions, mask), dim=1)

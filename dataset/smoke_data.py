@@ -57,7 +57,6 @@ class NavierStokesDatasetOpener(dp.iter.IterDataPipe):
                         if self.use_embed:
                             all_text = data['labels']
                             text = all_text[str(idx)].asstr()[()]
-                            #print(text)
                             if self.replace_newlines: # replace newlines with spaces
                                 text = text.replace('\n', ' ')
 
@@ -190,7 +189,7 @@ def build_datapipes(
     """Build datapipes for training and evaluation.
 
     Args:
-        data_path (str): Path to the data.
+        data_dir (str): Path to the data.
         limit_trajectories (int): Number of trajectories to use.
         usegrid (bool): Whether to use spatial grid as input.
         dataset_opener (Callable[..., dp.iter.IterDataPipe]): Dataset opener.
@@ -211,7 +210,7 @@ def build_datapipes(
     """
     print("Building datapipe")
     dpipe = lister(
-        data_config.data_path,
+        data_config.data_dir,
     )
     dpipe = dpipe.filter(filter_fn)
     # enforce even number of files 

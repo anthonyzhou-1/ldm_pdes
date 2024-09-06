@@ -9,7 +9,7 @@ All config files will expect:
 - wandb: A wandb project and name
 ```
 
-Additionally, when loading model for evaluation/inference, the scripts will expect:
+Additionally, when loading model for evaluation/inference (validation_{}.py), the scripts will expect:
 ```
 load_dir: directory to save evaluation outputs (images, plots, log files, etc.)
 model_path: path to pretrained model to evaluate (/path/to/model.ckpt)

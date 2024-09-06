@@ -40,6 +40,16 @@ class LPIPS_DPOT(nn.Module):
 
 
     def preprocess(self, x):  
+        # x in shape [b, c, nt, nx, ny]
+        # one consideration is that the channel dimension is a different shape in DPOT. 
+        # Our dataloader puts (vx, vy, u) in the channel dimension, but DPOT expects (u, vx, vy)
+
+        # rearrange channel dimension
+        u = x[:, :3, :, :, :]
+        v = x[:, 0:2, :, :, :]
+        mask = x[:, :3, :, :, :]
+        x = torch.cat([u, v, mask], dim=1)
+
         if x.shape[-1] != 128:
             c = x.shape[1]
             x = rearrange(x, 'b c t x y -> b (c t) x y')
