@@ -48,13 +48,11 @@ class LPIPS_DPOT(nn.Module):
         # Our dataloader puts (vx, vy, u) in the channel dimension, but DPOT expects (u, vx, vy)
 
         # rearrange channel dimension
-        print(x.shape)
         nc = x.shape[1]
         u = x[:, 2:3, :, :, :]
         v = x[:, 0:2, :, :, :]
-        mask = x[:, :-1, :, :, :]
+        mask = x[:, -1:, :, :, :]
         x = torch.cat([u, v, mask], dim=1)
-        print(x.shape)
         assert x.shape[1] == nc, f"expecting dimension {nc}, got {x.shape[1]}"
 
         if x.shape[-1] != 128:
