@@ -66,9 +66,9 @@ python train_ns2D.py --config=configs/ns2D/baselines/fno.yaml
 ```
 
 ### Validation/Inference
-To generate reconstructed samples on the validation set and evaluate a mean reconstruction loss:
+To generate reconstructed samples on the validation set and evaluate a mean reconstruction loss on cuda:0:
 ```
-python validate_AE.py --config=path/to/config
+python validate_AE.py --config=path/to/config --device="cuda:0"
 ```
 
 For baselines (not including ACDM), to generate predicted samples on the validation set and evaluate a mean prediction loss:
