@@ -17,7 +17,7 @@ def validate_ns2D(config, device):
     root_dir = config['load_dir'] + "eval/"
     os.makedirs(root_dir, exist_ok=True)
 
-    datamodule = FluidsDataModule(**dataconfig)
+    datamodule = FluidsDataModule(dataconfig)
     from modules.models.ae.ae_grid import Autoencoder, AutoencoderKL
     if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
         ae = Autoencoder
@@ -86,7 +86,7 @@ def validate_cylinder(config, device):
     root_dir = config['load_dir'] + "eval/"
     os.makedirs(root_dir, exist_ok=True)
 
-    datamodule = FluidsDataModule(**dataconfig)
+    datamodule = FluidsDataModule(dataconfig)
     normalizer = datamodule.normalizer
     from modules.models.ae.ae_mesh import AutoencoderKL, Autoencoder
     if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
