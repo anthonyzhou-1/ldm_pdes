@@ -12,7 +12,7 @@ class LPIPS_DPOT(nn.Module):
     def __init__(self, model_size='Ti', model_path=None, use_dropout=True):
         super().__init__()
         self.step_size = 10
-
+        print("using LPIPS-DPOT")
         if model_size == 'Ti':
             self.net = self.get_tiny()
             self.n_features = 4
@@ -30,6 +30,8 @@ class LPIPS_DPOT(nn.Module):
         
         self.net.load_state_dict(torch.load(model_path)['model'])
 
+        print(f"Model size: DPOT-{model_size}, loaded from {model_path}")
+
         self.linear_layers = nn.ModuleList()
 
         for i in range(self.n_features):
@@ -39,16 +41,20 @@ class LPIPS_DPOT(nn.Module):
             param.requires_grad = False # freeze backbone
 
 
+
     def preprocess(self, x):  
         # x in shape [b, c, nt, nx, ny]
         # one consideration is that the channel dimension is a different shape in DPOT. 
         # Our dataloader puts (vx, vy, u) in the channel dimension, but DPOT expects (u, vx, vy)
 
         # rearrange channel dimension
-        u = x[:, :3, :, :, :]
+        nc = x.shape[1]
+        u = x[:, 2:3, :, :, :]
         v = x[:, 0:2, :, :, :]
-        mask = x[:, :3, :, :, :]
+        mask = x[:, :-1, :, :, :]
         x = torch.cat([u, v, mask], dim=1)
+
+        assert x.shape[1] == nc # check if the channel dimension is the same
 
         if x.shape[-1] != 128:
             c = x.shape[1]
