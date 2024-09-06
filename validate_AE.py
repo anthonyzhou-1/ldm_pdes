@@ -118,7 +118,7 @@ def validate_cylinder(config, device):
 
     num_samples = len(valid_loader.dataset)
 
-    plot_interval = 20
+    plot_interval = 1
     all_losses = []
 
     for idx in tqdm(range(0, num_samples)):
