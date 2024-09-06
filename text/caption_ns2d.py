@@ -9,6 +9,11 @@ from skimage import feature
 from skimage import segmentation
 import re
 
+'''
+This script is used to label the Navier-Stokes dataset using the Anthropic API. 
+Also contains code to generate a segmented image using the Canny edge detection algorithm.
+'''
+
 DATA_KEY = "labels"
 IMG_DIR = "/home/ayz2/ldm_fluids/logs/imgs_new"
 num_tries = 0
@@ -243,7 +248,7 @@ def restart_on_crash():
         # Create infinite loop to simulate whatever is running
         # in your program
         while True:
-            print("Hello!")
+            print("Starting Program")
             do_everything()
     except Exception:
         print("Something crashed your program. Let's restart it")

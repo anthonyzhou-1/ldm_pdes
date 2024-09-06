@@ -1,6 +1,11 @@
 import h5py 
 import numpy as np
 
+'''
+Extracts relevant metadata from the mesh data and stores it in the metadata group of the sample. 
+Also captions the sample with a prompt that describes the flow.
+'''
+
 def get_cylinder_pos_radius(sample):
     node_type = sample["node_type"][:]
     mesh_pos = sample["mesh_pos"][:]
