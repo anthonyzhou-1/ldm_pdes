@@ -56,15 +56,26 @@ The pretrained models are:
 ## Training and Inference
 For more information about the relevant training parameters, see the [configs](configs) directory.
 
-Workflow for running an experiment:
+Workflow for training a model:
 - Setup environment
 - Download a dataset 
 - Make a log directory 
-- For training: Setup wandb
+- Setup wandb
+- Set paths to dataset, normalization stats, logging directory
 - For LDM training: download a pretrained autoencoder 
-- For LDM inference: download a pretrained LDM model
+- Recommended training hardware:
+    - LDM_small: 1xA100
+    - LDM_medium: 4xA100
+    - LDM_large: 4xA100_80GB
 
-Before running an experiment it is recommended to make a logs directory for model outputs. (mkdir root/logs)
+Workflow for inference:
+- Download a pretrained LDM model
+- For text evaluation/FLOPs: setup PhiFlow/Deepspeed
+- Set paths to pretrained model and logging directory
+- Memory requirements for inference w/ batch size = 1:
+    - LDM_small: 
+    - LDM_medium:  
+    - LDM_large: 
 
 ### Autoencoder
 To train an autoencoder (supports KL regularization, GAN, LPIPS):

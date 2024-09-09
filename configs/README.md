@@ -38,8 +38,8 @@ LDM configs expect a path to a pretrained autoencoder, and has additional option
 - pretrained_path: path to pretrained autoencoder.
 - conditional: set to False if doing unconditional diffusion
 - clip_denoised, parameterization, scale_factor, beta_schedule: controls different modifications to the denoising process
+- batch_size/accumulate_grad_batches: depending on available memory and # of GPUs, set to effective batch size of around 4.
 ```
 
 ## Baseline Configs
-Baseline configs outline different benchmark models and parameters. Each model has its own hyperparameters, but in general the size is controlled by scaling a hidden dimension.
-
+Baseline configs outline different benchmark models and parameters. Each model has its own hyperparameters, but in general the size is controlled by scaling a hidden dimension. Additionally, mesh baselines are only compatible with a batch size of 1, but can emulate larger batch sizes by increasing accumulate_grad_batches. 
