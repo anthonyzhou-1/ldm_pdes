@@ -1,10 +1,6 @@
 # Latent Diffusion for PDEs
-
-## Text Conditioned Samples
 ![Text-Conditioned Samples](./pics/text_examples.png)
 
-## Architecture Overview
-![Architecture Overview](./pics/overview.png)
 
 ## Requirements
 
