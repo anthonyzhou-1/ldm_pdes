@@ -10,6 +10,7 @@ from phi.flow import (  # SoftGeometryMask,; Sphere,; batch,; tensor,
 from phi.math import reshaped_native, spatial, channel
 import phi 
 import torch 
+from tqdm import tqdm
 
 def simulate_fluid(inputs, buoyancy_y):
     # inputs in shape b nt nx ny nc 
@@ -55,7 +56,7 @@ def simulate_fluid(inputs, buoyancy_y):
     )
 
 
-    for i in range(0, nt-1):
+    for i in tqdm(range(0, nt-1), desc="Simulating Fluid", leave=False):
         smoke = advect.semi_lagrangian(smoke, velocity, dt)
         buoyancy_force = (smoke * (0, buoyancy_y)).at(velocity)  # resamples smoke to velocity sample points
         velocity = advect.semi_lagrangian(velocity, velocity, dt) + dt * buoyancy_force
