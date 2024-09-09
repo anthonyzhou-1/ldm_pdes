@@ -1,4 +1,4 @@
-# Latent Diffusion for Fluids
+# Latent Diffusion for PDEs
 
 ## Requirements
 
@@ -17,6 +17,7 @@ pip install transformers
 pip install wandb h5py tensorboard einops open3d sparse-dot-mkl timm 
 ```
 Some packages are just easier to install with pip vs conda.
+
 Optional installs for image captioning and FLOPs profiling:
 ```
 pip install scikit-image deepspeed
