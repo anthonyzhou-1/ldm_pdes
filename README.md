@@ -75,9 +75,9 @@ Workflow for inference:
 - Download a pretrained LDM model
 - For text evaluation/FLOPs: setup PhiFlow/Deepspeed
 - Set paths to pretrained model and logging directory
-- Memory requirements for inference w/ batch size = 1:
-    - LDM_small: 
-    - LDM_medium:  
+- Approximate memory requirements for inference w/ batch size = 1:
+    - LDM_small: 12.5 GB
+    - LDM_medium: 
     - LDM_large: 
 ```
 

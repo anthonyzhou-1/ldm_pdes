@@ -1,5 +1,5 @@
-load_dir: logs/profiles/DiTLarge/
-model_path: logs/profiles/DiTLarge/last.ckpt
+load_dir: logs/ldm_ns2D/text/DiTHuge/
+model_path: logs/ldm_ns2D/text/DiTHuge/last.ckpt
 phiflow: True 
 
 data:
