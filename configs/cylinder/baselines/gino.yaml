@@ -3,11 +3,11 @@ model_path: logs/GINO_642024-09-01T15-22-49/model_epoch=1444-val/rollout_loss=0.
 model_name: gino
 
 data:
-  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
   batch_size: 1 # only works with batch size of 1
   num_workers: 16
   mode: cylinder
   dataset:
+    data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
     time_horizon: 25
     padding: False
     max_len: 2060

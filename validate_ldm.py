@@ -213,7 +213,6 @@ def validate_ns2D_phiflow(config, device):
     dataconfig = config['data']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
-    data_dir = dataconfig["dataset"]["data_path"]
     root_dir = load_dir + "eval_phiflow"
     os.makedirs(root_dir, exist_ok=True)
 
@@ -284,7 +283,7 @@ def validate_ns2D_phiflow(config, device):
             del log["diffusion_row"]
             del log["denoise_row"]
 
-            solution_resolved = simulate_fluid(log['samples'], buoyancy_y, data_dir) # assumes batch size of 1
+            solution_resolved = simulate_fluid(log['samples'], buoyancy_y) # assumes batch size of 1
             log["solution_resolved"] = solution_resolved    
 
             if idx % plot_interval == 0:
