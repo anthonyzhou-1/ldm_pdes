@@ -1,4 +1,5 @@
 load_dir: logs/ldm_cylinder/text/DiTSmall/
+model_path: logs/ldm_cylinder/text/DiTSmall/last.ckpt
 
 data:
   batch_size: 3

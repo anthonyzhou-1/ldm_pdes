@@ -1,4 +1,5 @@
 load_dir: logs/profiles/Unet/
+model_path: logs/profiles/Unet/last.ckpt
 model_name: unet
 
 data:

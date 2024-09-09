@@ -1,4 +1,5 @@
 load_dir: logs/profiles/FNO/
+model_path: logs/profiles/FNO/last.ckpt
 model_name: fno
 
 data:

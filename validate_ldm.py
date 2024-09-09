@@ -27,7 +27,7 @@ def validate_cylinder(config, device):
                                 normalizer=datamodule.normalizer,
                                 use_embed=dataconfig["dataset"]["use_embed"])
 
-    path = load_dir + "last.ckpt" # try last checkpoint
+    path = config["model_path"]
 
     checkpoint = torch.load(path, map_location=device)
 
@@ -128,7 +128,7 @@ def validate_ns2D(config, device):
                                     normalizer=datamodule.normalizer,
                                     use_embed=dataconfig["dataset"]["use_embed"])
 
-    path = load_dir + "last.ckpt" # try last checkpoint
+    path = config["model_path"]
 
     checkpoint = torch.load(path, map_location=device)
     if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
@@ -225,9 +225,7 @@ def validate_ns2D_phiflow(config, device):
                                 normalizer=datamodule.normalizer,
                                 use_embed=dataconfig["dataset"]["use_embed"])
 
-    #path = load_dir + "best.ckpt"
-    #if not os.path.isfile(path):
-    path = load_dir + "last.ckpt" # try last checkpoint
+    path = config["model_path"]
 
     checkpoint = torch.load(path, map_location=device)
     if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
