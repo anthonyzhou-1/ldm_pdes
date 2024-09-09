@@ -1,11 +1,11 @@
 load_dir: logs/LDM_cylinder_normal_DiT_vector_ablate2024-08-15T17-46-54/
 
 data:
-  data_dir: /dev/shm/mesh/
   batch_size: 3
   num_workers: 20
   mode: cylinder
   dataset:
+    data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
     time_horizon: 25
     padding: True
     max_len: 2060
@@ -14,7 +14,7 @@ data:
   normalizer:
     use_norm: true 
     scaler: normal
-    stat_path: /dev/shm/mesh/train_normal_stat.pkl
+    stat_path: /home/ayz2/data/deepmind/cylinder_flow/mesh/train_normal_stat.pkl
     conditional: False
 
 training:

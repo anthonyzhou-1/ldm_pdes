@@ -1,17 +1,13 @@
-#load_dir: logs/text/DiTSmall/
 load_dir: logs/profiles/DiT_text_Small/
 phiflow: True 
 
 data:
-    #data_dir: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned/
-    data_dir: /home/ayz2/data/NavierStokes-2D-conditoned/
     batch_size: 4
     num_workers: 16
     mode: ns2D
     drop_last: True
     dataset:
-      #data_path: /data/anthonyz/ns2D_text/NavierStokes-2D-conditoned
-      data_path: /home/ayz2/data/NavierStokes-2D-conditoned
+      data_dir: /home/ayz2/data/NavierStokes-2D-conditoned
       delta_t: 1
       downsample: 1
       trajlen: 48
@@ -22,7 +18,6 @@ data:
     normalizer:
       use_norm: true 
       scaler: normal
-      #stat_path: /home/anthonyz/data/ns2D/train_ns2D_normal_128_stat.pkl
       stat_path: /home/ayz2/data/ns2D/train_ns2D_normal_128_stat.pkl
 
 training:

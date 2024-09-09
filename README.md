@@ -18,9 +18,9 @@ pip install wandb h5py tensorboard einops open3d sparse-dot-mkl timm
 ```
 Some packages are just easier to install with pip vs conda.
 
-Optional installs for image captioning and FLOPs profiling:
+Optional installs for image captioning, FLOPs profiling, and text evaluation:
 ```
-pip install scikit-image deepspeed
+pip install scikit-image deepspeed phiflow
 ```
 
 If you cannot install pytorch<=2.0.1, please refer to the [Compatibility](#compatibility) section, as some libraries require this version. 
@@ -55,6 +55,14 @@ The pretrained models are:
 
 ## Training and Inference
 For more information about the relevant training parameters, see the [configs](configs) directory.
+
+Workflow for running an experiment:
+- Setup environment
+- Download a dataset
+- Make a log directory (mkdir root/logs)
+- Setup wandb
+- 
+
 Before running an experiment it is recommended to make a logs directory for model outputs. (mkdir root/logs)
 
 ### Autoencoder

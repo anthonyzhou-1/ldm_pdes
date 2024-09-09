@@ -3,11 +3,11 @@ model_path: logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/rollout_loss=0.0
 model_name: oformer
 
 data:
-  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
   batch_size: 1 # only works with batch size of 1
   num_workers: 20
   mode: cylinder
   dataset:
+    data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
     time_horizon: 25
     return_cells: True
   normalizer:

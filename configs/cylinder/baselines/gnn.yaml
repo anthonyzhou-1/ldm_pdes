@@ -3,11 +3,11 @@ model_path: logs/GNN2024-08-29T11-53-05/model_epoch=549-val/rollout_loss=0.07.ck
 model_name: gnn
 
 data:
-  data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
   batch_size: 1 # only works with batch size of 1
   num_workers: 20
   mode: cylinder
   dataset:
+    data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh/
     time_horizon: 25
     return_cells: True
   normalizer:
