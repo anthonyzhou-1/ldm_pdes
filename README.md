@@ -32,12 +32,12 @@ pip install scikit-image deepspeed phiflow
 If you cannot install pytorch<=2.0.1, please refer to the [Compatibility](#compatibility) section, as some libraries require this version. 
 
 ## Datasets
-Full datasets are available [here.]() (coming soon)
+Full datasets are available [here.](https://huggingface.co/datasets/ayz2/ldm_pdes)
 
 Please refer to the [dataset](dataset) directory for a description of the raw data and dataloading. 
 
-## Model Zoo
-Pretrained models are available [here.]() (coming soon)
+## Pretrained Models
+Pretrained models are available [here.](https://huggingface.co/datasets/ayz2/ldm_pdes)
 
 The pretrained models are:
 ```
