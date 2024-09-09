@@ -58,10 +58,11 @@ For more information about the relevant training parameters, see the [configs](c
 
 Workflow for running an experiment:
 - Setup environment
-- Download a dataset
-- Make a log directory (mkdir root/logs)
-- Setup wandb
-- 
+- Download a dataset 
+- Make a log directory 
+- For training: Setup wandb
+- For LDM training: download a pretrained autoencoder 
+- For LDM inference: download a pretrained LDM model
 
 Before running an experiment it is recommended to make a logs directory for model outputs. (mkdir root/logs)
 

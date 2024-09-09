@@ -21,7 +21,7 @@ training:
   checkpoint: null
   dataset_size: 1000
   default_root_dir: logs/
-  devices: 3
+  devices: 1
   strategy: auto
   accumulate_grad_batches: 1
   max_epochs: 1000
@@ -30,7 +30,7 @@ training:
   ema_every_n_steps: 1
 
 wandb:
-    name: LDM_cylinder_normal_FF
+    name: LDM_cylinder_Unet_FF
     project: ldm_diffusion
 
 model:

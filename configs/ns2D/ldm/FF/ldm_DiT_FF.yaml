@@ -25,8 +25,8 @@ training:
   log_every_n_steps: 32
   checkpoint: null
   dataset_size: 2496
-  default_root_dir: /pscratch/sd/a/ayz2/logs/
-  devices: 4
+  default_root_dir: logs/
+  devices: 1
   strategy: auto
   accumulate_grad_batches: 1
   max_epochs: 1000
@@ -38,7 +38,7 @@ training:
   limit_val_batches: 70
 
 wandb:
-    name: LDM_NS2D_normal_DiT_newAE_FF
+    name: LDM_NS2D_DiT_FF
     project: ldm_diffusion
 
 model:
