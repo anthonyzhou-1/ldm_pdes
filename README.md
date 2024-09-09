@@ -3,7 +3,11 @@
 ## Requirements
 
 To install requirements:
+```
+conda-env create -n my_env -f=environment.yml
+```
 
+Alternatively, to manually install required packages:
 ```setup
 conda create -n "my_env" 
 conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 torchdata=0.6.0 -c pytorch -c nvidia 
