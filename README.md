@@ -63,21 +63,21 @@ Workflow for training a model:
 - Make a log directory 
 - Setup wandb
 - Set paths to dataset, normalization stats, logging directory
-- For LDM training: download a pretrained autoencoder 
+- For LDM training: download a pretrained AE or train an AE
 - Recommended training hardware:
     - LDM_small: 1xA100
     - LDM_medium: 4xA100
-    - LDM_large: 4xA100_80GB
+    - LDM_large: 4xA100 80GB
 ```
 
 Workflow for inference:
 ```
-- Download a pretrained LDM model
+- Download a pretrained LDM and AE model
 - For text evaluation/FLOPs: setup PhiFlow/Deepspeed
 - Set paths to pretrained model and logging directory
 - Approximate memory requirements for inference w/ batch size = 1:
-    - LDM_small: 12.5 GB
-    - LDM_medium: 
+    - LDM_small: 6.7 GB
+    - LDM_medium: 12.5 GB
     - LDM_large: 
 ```
 
