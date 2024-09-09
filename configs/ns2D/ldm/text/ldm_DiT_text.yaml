@@ -1,5 +1,5 @@
-load_dir: logs/profiles/DiT_text/
-model_path: logs/profiles/DiT_text/last.ckpt
+load_dir: logs/ldm_ns2D/text/DiT/
+model_path: /home/ayz2/ldm_fluids/logs/ldm_ns2D/text/DiT/last.ckpt
 phiflow: True 
 
 data:
