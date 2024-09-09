@@ -1,5 +1,8 @@
 # Latent Diffusion for PDEs
 
+![Text-Conditioned Samples](./pics/text_examples.jpeg)
+![Architecture Overview](./pics/overview.jpeg)
+
 ## Requirements
 
 To install requirements:
@@ -78,7 +81,7 @@ Workflow for inference:
 - Approximate memory requirements for inference w/ batch size = 1:
     - LDM_small: 6.7 GB
     - LDM_medium: 12.5 GB
-    - LDM_large: 
+    - LDM_large: 35 GB
 ```
 
 ### Autoencoder
@@ -134,7 +137,7 @@ For LDM and ACDM models, to conditionally sample from the validation set and eva
 python validate_ldm.py --config=path/to/config
 ```
 
-Example: sample a medium-size LDM after training by conditioning by all first-frames in a cylinder validation set.
+Example: sample a pretrained medium-size LDM by conditioning on first-frames in a cylinder validation set.
 ```
 python validate_ldm.py --config=configs/cylinder/ldm/text/ldm_DiT_text.yaml
 ```
