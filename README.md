@@ -57,6 +57,7 @@ The pretrained models are:
 For more information about the relevant training parameters, see the [configs](configs) directory.
 
 Workflow for training a model:
+```
 - Setup environment
 - Download a dataset 
 - Make a log directory 
@@ -67,8 +68,10 @@ Workflow for training a model:
     - LDM_small: 1xA100
     - LDM_medium: 4xA100
     - LDM_large: 4xA100_80GB
+```
 
 Workflow for inference:
+```
 - Download a pretrained LDM model
 - For text evaluation/FLOPs: setup PhiFlow/Deepspeed
 - Set paths to pretrained model and logging directory
@@ -76,6 +79,7 @@ Workflow for inference:
     - LDM_small: 
     - LDM_medium:  
     - LDM_large: 
+```
 
 ### Autoencoder
 To train an autoencoder (supports KL regularization, GAN, LPIPS):

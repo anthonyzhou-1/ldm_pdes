@@ -1,5 +1,5 @@
 load_dir: logs/GNN2024-08-29T11-53-05/model_epoch=549-val/
-model_path: logs/GNN2024-08-29T11-53-05/model_epoch=549-val/rollout_loss=0.07.ckpt
+model_path: /home/ayz2/ldm_fluids/logs/GNN2024-08-29T11-53-05/model_epoch=549-val/rollout_loss=0.07.ckpt
 model_name: gnn
 
 data:
