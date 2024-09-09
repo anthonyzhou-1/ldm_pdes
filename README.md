@@ -27,10 +27,12 @@ If you cannot install pytorch<=2.0.1, please refer to the [Compatibility](#compa
 
 ## Datasets
 Full datasets are available [here.]() (coming soon)
+
 Please refer to the [dataset](dataset) directory for a description of the raw data and dataloading. 
 
 ## Model Zoo
 Pretrained models are available [here.]() (coming soon)
+
 The pretrained models are:
 ```
 - Autoencoders:
