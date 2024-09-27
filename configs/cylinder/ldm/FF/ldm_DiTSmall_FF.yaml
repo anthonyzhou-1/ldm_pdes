@@ -71,7 +71,7 @@ model:
         dim: 3
 
     first_stage_config:
-        pretrained_path: logs/GINO_autoencoderKL_16_normed_batched2024-07-25T12-14-31/model_epoch=974-val/rec_loss=0.01.ckpt
+        pretrained_path: /home/ayz2/ldm_fluids/logs/GINO_autoencoderKL_16_normed_batched2024-07-25T12-14-31/model_epoch=974-val/rec_loss=0.01.ckpt
         aeconfig:
           decoder:
             attn_resolutions:
