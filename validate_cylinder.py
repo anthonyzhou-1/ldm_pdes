@@ -61,6 +61,7 @@ def validate_cylinder(config, device):
 
     plot_interval = 10
     all_losses = []
+    all_times = []
 
     idx = 0 
     for batch in tqdm(valid_loader):
@@ -108,6 +109,7 @@ def validate_cylinder(config, device):
 
         rec_loss = F.l1_loss(x, rec)
         all_losses.append(rec_loss)
+        all_times.append(end - start)
         idx += 1
 
         if verbose:
@@ -119,6 +121,7 @@ def validate_cylinder(config, device):
         pickle.dump(all_losses, f)
     
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 
 def main(args):
