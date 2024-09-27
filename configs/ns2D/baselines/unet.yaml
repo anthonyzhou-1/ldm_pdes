@@ -1,5 +1,5 @@
-load_dir: logs/profiles/Unet/
-model_path: logs/profiles/Unet/last.ckpt
+load_dir: /home/ayz2/ldm_fluids/logs/profiles/Unet/
+model_path: /home/ayz2/ldm_fluids/logs/profiles/Unet/last.ckpt
 model_name: unet
 
 data:

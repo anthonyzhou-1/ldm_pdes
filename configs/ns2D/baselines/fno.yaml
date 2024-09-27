@@ -1,5 +1,5 @@
-load_dir: logs/profiles/FNO/
-model_path: logs/profiles/FNO/last.ckpt
+load_dir: /home/ayz2/ldm_fluids/logs/profiles/FNO/
+model_path: /home/ayz2/ldm_fluids/logs/profiles/FNO/last.ckpt
 model_name: fno
 
 data:
