@@ -1,5 +1,5 @@
 load_dir: logs/ldm_cylinder/FF/DiT/
-model_path: logs/ldm_cylinder/FF/DiT/last.ckpt
+model_path: /home/ayz2/ldm_fluids/logs/ldm_cylinder/FF/DiT/ldm_DiT_FF_cylinder.ckpt
 
 data:
   batch_size: 3
