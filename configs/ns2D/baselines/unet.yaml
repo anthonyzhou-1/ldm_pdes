@@ -1,5 +1,5 @@
 load_dir: /home/ayz2/ldm_fluids/logs/Unet_NS2D_large2024-08-08T11-09-13/
-model_path: null
+model_path: /home/ayz2/ldm_pdes/logs/unet/rollout_error=0.177.ckpt
 model_name: unet
 
 data:
