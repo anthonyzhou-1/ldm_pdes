@@ -56,6 +56,8 @@ def main(args):
     idx = 0 
     with torch.no_grad():
         for batch in tqdm(valid_loader):
+            if idx == 10:
+                break
             batch = {k: v.to(pl_module.device) for k, v in batch.items()}
             start = time.time()
             errors, rec = pl_module.validation_step(batch, 0, eval=True)
