@@ -1,5 +1,5 @@
 load_dir: logs/profiles/DiT_FF_Small/
-model_path: logs/profiles/DiT_FF_Small/last.ckpt
+model_path: null
 
 data:
     batch_size: 4

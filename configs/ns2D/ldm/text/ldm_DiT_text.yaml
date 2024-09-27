@@ -1,6 +1,6 @@
 load_dir: logs/ldm_ns2D/text/DiT/
-model_path: /home/ayz2/ldm_fluids/logs/ldm_ns2D/text/DiT/last.ckpt
-phiflow: True 
+model_path: /home/ayz2/ldm_fluids/logs/ldm_ns2D/text/DiT/ldm_DiT_text_ns2D.ckpt
+phiflow: False
 
 data:
     batch_size: 4
