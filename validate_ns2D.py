@@ -83,6 +83,8 @@ def main(args):
                 print("Loss: ", rec_loss)
                 print("Time: ", end - start)
     
+    del all_times[0] # first time is always longer
+
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
 

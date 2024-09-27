@@ -224,6 +224,8 @@ def validate_ns2D(config, device):
                 print("Loss: ", rec_loss)
                 print("Time: ", end - start)
     
+    del all_times[0] # remove first time as it is usually an outlier
+
     with open(root_dir + "all_losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
     
