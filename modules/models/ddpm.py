@@ -546,6 +546,13 @@ class LatentDiffusion(DDPM):
             else:
                 x = self.normalizer.normalize(x) # normalize input
 
+        print(x.device)
+        print(pos.device)
+        if cond is not None:
+            print(cond.device)
+        if pad_mask is not None:
+            print(pad_mask.device)
+
         encoder_posterior = self.encode_first_stage(x, pos, pad_mask=pad_mask, cond=cond) # encode x to posterior
         z = self.get_first_stage_encoding(encoder_posterior).detach() # sample from posterior
 
