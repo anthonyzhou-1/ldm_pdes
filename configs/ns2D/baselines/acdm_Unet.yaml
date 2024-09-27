@@ -1,4 +1,4 @@
-load_dir: /home/ayz2/ldm_fluids/logs/ACDM_DiT2024-09-01T14-41-43/
+load_dir: /home/ayz2/ldm_fluids/logs/ACDM_DiT2024-09-01T14-41-43/eval/
 model_path: /home/ayz2/ldm_fluids/logs/ACDM_DiT2024-09-01T14-41-43/last.ckpt
 model_name: acdm
 
