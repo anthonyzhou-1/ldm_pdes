@@ -1,5 +1,5 @@
-load_dir: /home/ayz2/ldm_fluids/logs/profiles/Unet/
-model_path: /home/ayz2/ldm_fluids/logs/profiles/Unet/last.ckpt
+load_dir: home/ayz2/ldm_fluids/logs/Unet_NS2D_large2024-08-08T11-09-13/
+model_path: home/ayz2/ldm_fluids/logs/Unet_NS2D_large2024-08-08T11-09-13/model_epoch=429-val/mse_loss=0.000.ckpt
 model_name: unet
 
 data:
