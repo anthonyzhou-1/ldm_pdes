@@ -32,14 +32,16 @@ def main(args):
                            trainconfig=trainconfig,
                            normalizer=datamodule.normalizer,
                            batch_size=dataconfig["batch_size"],)
+    
+    if path is not None:
+        checkpoint = torch.load(path, map_location=device)
+        pl_module.load_state_dict(checkpoint["state_dict"])
+        print("Model loaded from: ", path)
+    else:
+        print("No model path given, using random weights")
 
-    checkpoint = torch.load(path, map_location=device)
-    pl_module.load_state_dict(checkpoint["state_dict"])
     pl_module.eval()
     pl_module = pl_module.to(device)
-
-    print("Model loaded from: ", path)
-
     valid_loader = datamodule.val_dataloader()
 
     num_samples = 32*19
