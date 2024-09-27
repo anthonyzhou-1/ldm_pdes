@@ -47,6 +47,7 @@ def validate_cylinder(config, device):
 
     plot_interval = 1
     all_losses = []
+    all_times = []
 
     for idx in tqdm(range(0, num_samples)):
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
@@ -103,18 +104,25 @@ def validate_cylinder(config, device):
 
         loss = F.l1_loss(log["inputs"], log["samples"]) 
         all_losses.append(loss)
+        all_times.append(end - start)
 
         if verbose:
             print("Loss: ", loss)
             print("Time: ", end - start)
 
+    del all_times[0] # remove first time as it is usually an outlier
+
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
+
+    with open(root_dir + "times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
 
     with open(root_dir + "mean_loss.txt", "w") as text_file:
         text_file.write(str(torch.mean(torch.tensor(all_losses))))
 
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 def validate_ns2D(config, device):
     load_dir = config["load_dir"]
@@ -155,6 +163,7 @@ def validate_ns2D(config, device):
 
     plot_interval = 1
     all_losses = []
+    all_times = []  
 
     print("starting at: ", start_idx)
     print("ending at: ", end_idx)
@@ -205,6 +214,7 @@ def validate_ns2D(config, device):
 
             rec_loss = F.l1_loss(log["inputs"], log["samples"])
             all_losses.append(rec_loss)
+            all_times.append(end - start)
             idx += 1
 
             with open(root_dir + f"losses_{idx}.pkl", "wb") as f:
@@ -217,10 +227,14 @@ def validate_ns2D(config, device):
     with open(root_dir + "all_losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
     
+    with open(root_dir + "all_times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
+    
     with open(root_dir + "mean_loss.txt", "w") as text_file:
         text_file.write(str(torch.mean(torch.tensor(all_losses))))
 
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 def validate_ns2D_phiflow(config, device):
     load_dir = config["load_dir"]

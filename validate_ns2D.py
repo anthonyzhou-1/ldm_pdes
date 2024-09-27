@@ -46,6 +46,7 @@ def main(args):
 
     plot_interval = 100
     all_losses = []
+    all_times = []
 
     print("Number of samples: ", num_samples)
     print("Plot interval: ", plot_interval)
@@ -75,6 +76,7 @@ def main(args):
 
             rec_loss = F.l1_loss(x, rec)
             all_losses.append(rec_loss)
+            all_times.append(end - start)
             idx += 1
 
             if verbose:
@@ -83,8 +85,12 @@ def main(args):
     
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
+
+    with open(root_dir + "times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
     
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 
 if __name__ == "__main__":
