@@ -116,9 +116,12 @@ def validate_cylinder(config, device):
             print("Loss: ", rec_loss)
             print("Time: ", end - start)
 
-    
+    del all_times[0] # remove first time as it is usually an outlier
+
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
+    with open(root_dir + "times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
     
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
     print("Mean Time: ", torch.mean(torch.tensor(all_times)))
