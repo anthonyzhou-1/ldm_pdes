@@ -77,7 +77,7 @@ model:
         dim: 3
 
     first_stage_config:
-        pretrained_path: logs/ns2D/new_rec_loss=0.01.ckpt
+        pretrained_path: /home/ayz2/ldm_fluids/logs/ns2D/new_rec_loss=0.01.ckpt
         aeconfig:
           decoder:
             attn_resolutions:
