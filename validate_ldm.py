@@ -29,17 +29,16 @@ def validate_cylinder(config, device):
                                 use_embed=dataconfig["dataset"]["use_embed"])
 
     path = config["model_path"]
-
-    checkpoint = torch.load(path, map_location=device)
-
-    if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
-        checkpoint = checkpoint["state_dict"]
-
-    pl_module.load_state_dict(checkpoint)
+    if path is not None:
+        checkpoint = torch.load(path, map_location=device)
+        if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
+            checkpoint = checkpoint["state_dict"]
+        pl_module.load_state_dict(checkpoint)
+        print("LDM Model loaded from: ", path)
+    else:
+        print("No model path given, using random weights")
     pl_module.eval()
     pl_module = pl_module.to(device)
-
-    print("LDM Model loaded from: ", path)
 
     valid_loader = datamodule.val_dataloader()
 
@@ -145,21 +144,21 @@ def validate_ns2D(config, device):
                                     use_embed=dataconfig["dataset"]["use_embed"])
 
     path = config["model_path"]
-
-    checkpoint = torch.load(path, map_location=device)
-    if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
-        checkpoint = checkpoint["state_dict"]
-
-    pl_module.load_state_dict(checkpoint)
+    if path is not None:
+        checkpoint = torch.load(path, map_location=device)
+        if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
+            checkpoint = checkpoint["state_dict"]
+        pl_module.load_state_dict(checkpoint)
+        print("LDM Model loaded from: ", path)
+    else:
+        print("No model path given, using random weights")
     pl_module.eval()
     pl_module = pl_module.to(device)
-
-    print("LDM Model loaded from: ", path)
 
     valid_loader = datamodule.val_dataloader()
 
     start_idx = 0 # inclusive
-    end_idx = 200 # exclusive
+    end_idx = 10 # exclusive
 
     plot_interval = 1
     all_losses = []
