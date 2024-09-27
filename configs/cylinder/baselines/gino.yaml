@@ -1,5 +1,5 @@
-load_dir: logs/GINO_642024-09-01T15-22-49/
-model_path: logs/GINO_642024-09-01T15-22-49/model_epoch=1444-val/rollout_loss=0.06.ckpt
+load_dir: /home/ayz2/ldm_fluids/logs/GINO_642024-09-01T15-22-49/
+model_path: /home/ayz2/ldm_fluids/logs/GINO_642024-09-01T15-22-49/model_epoch=1444-val/rollout_loss=0.06.ckpt
 model_name: gino
 
 data:
