@@ -8,11 +8,13 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import argparse
+import time
 
 def validate_cylinder(config, device):
     dataconfig = config['data']
     modelconfig = config['model']
     trainconfig = config['training']
+    verbose = config['verbose']
 
     batch_size = 1
     dataconfig['batch_size'] = batch_size
@@ -68,8 +70,11 @@ def validate_cylinder(config, device):
 
         batch = {k: v.to(pl_module.device) for k, v in batch.items()}
 
+        start = time.time()
         with torch.no_grad():
             errors, rec = pl_module.validation_step(batch, 0, eval=True)
+        
+        end = time.time()
     
         x = batch["x"].detach().cpu() # b, t, m, c
         pos = batch["pos"].detach().cpu() # b, t, m, 3
@@ -104,6 +109,11 @@ def validate_cylinder(config, device):
         rec_loss = F.l1_loss(x, rec)
         all_losses.append(rec_loss)
         idx += 1
+
+        if verbose:
+            print("Loss: ", rec_loss)
+            print("Time: ", end - start)
+
     
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
@@ -119,6 +129,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an LDM')
     parser.add_argument("--config", default=None)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--verbose", default=False)
     args = parser.parse_args()
 
     main(args)

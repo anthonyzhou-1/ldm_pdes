@@ -16,6 +16,7 @@ import time
 def validate_cylinder(config, device):
     load_dir = config["load_dir"]
     dataconfig = config['data']
+    verbose = config['verbose']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
     root_dir = load_dir + "eval/"
@@ -59,8 +60,10 @@ def validate_cylinder(config, device):
         if pl_module.use_embed:
             batch["prompt"] = [prompt]
 
+        start = time.time()
         with torch.no_grad():
-            log = pl_module.log_images(batch)
+            log = pl_module.log_images(batch, plot_diffusion_rows=False, plot_denoise_rows=False)
+        end = time.time()
 
         pos = batch["pos"] # b, t, m, 3
 
@@ -101,6 +104,10 @@ def validate_cylinder(config, device):
         loss = F.l1_loss(log["inputs"], log["samples"]) 
         all_losses.append(loss)
 
+        if verbose:
+            print("Loss: ", loss)
+            print("Time: ", end - start)
+
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
 
@@ -112,6 +119,7 @@ def validate_cylinder(config, device):
 def validate_ns2D(config, device):
     load_dir = config["load_dir"]
     dataconfig = config['data']
+    verbose = config['verbose']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
     root_dir = load_dir + "eval/"
@@ -178,7 +186,9 @@ def validate_ns2D(config, device):
             if prompt is not None:
                 batch["prompt"] = prompt
 
+            start = time.time()
             log = pl_module.log_images(batch, N=batch_size, plot_diffusion_rows=False, plot_denoise_rows=False)
+            end = time.time()
 
             if idx % plot_interval == 0:
                 with open(root_dir + f"/log_{idx}.pkl", "wb") as f:
@@ -199,6 +209,10 @@ def validate_ns2D(config, device):
 
             with open(root_dir + f"losses_{idx}.pkl", "wb") as f:
                 pickle.dump(rec_loss, f)
+            
+            if verbose:
+                print("Loss: ", rec_loss)
+                print("Time: ", end - start)
     
     with open(root_dir + "all_losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
@@ -336,6 +350,7 @@ def validate_ns2D_phiflow(config, device):
 
 def main(args):
     config=get_yaml(args.config)
+    config['verbose'] = args.verbose
     mode = config['data']['mode'] # get mode
     config["training"]['devices'] = 1 # set devices to 1
     device = args.device
@@ -353,6 +368,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an LDM')
     parser.add_argument("--config", default=None)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--verbose", default=False) 
     args = parser.parse_args()
 
     main(args)

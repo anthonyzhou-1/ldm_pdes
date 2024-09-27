@@ -9,12 +9,14 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import argparse
+import time 
 
 def main(args):
     config = get_yaml(args.config)
     device = args.device
     load_dir = config["load_dir"]
     dataconfig = config['data']
+    verbose = config['verbose']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
     root_dir = load_dir + "eval/"
@@ -52,7 +54,9 @@ def main(args):
     with torch.no_grad():
         for batch in tqdm(valid_loader):
             batch = {k: v.to(pl_module.device) for k, v in batch.items()}
+            start = time.time()
             errors, rec = pl_module.validation_step(batch, 0, eval=True)
+            end = time.time()
         
             x = batch["x"].detach().cpu() # b, t, x, y, c
             rec = rec.detach().cpu() # b, t, x, y, c
@@ -72,6 +76,10 @@ def main(args):
             rec_loss = F.l1_loss(x, rec)
             all_losses.append(rec_loss)
             idx += 1
+
+            if verbose:
+                print("Loss: ", rec_loss)
+                print("Time: ", end - start)
     
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
@@ -83,6 +91,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an LDM')
     parser.add_argument("--config", default=None)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--verbose", default=False)
     args = parser.parse_args()
 
     main(args)
