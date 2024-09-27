@@ -1,5 +1,5 @@
 load_dir: logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/
-model_path: logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/rollout_loss=0.07.ckpt
+model_path: /home/ayz2/ldm_fluids/logs/OFormer2024-08-29T14-19-52/model_epoch=699-val/rollout_loss=0.07.ckpt
 model_name: oformer
 
 data:
