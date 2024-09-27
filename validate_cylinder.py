@@ -123,6 +123,7 @@ def validate_cylinder(config, device):
 
 def main(args):
     config = get_yaml(args.config)
+    config["verbose"] = args.verbose
     validate_cylinder(config, args.device)
 
 if __name__ == "__main__":

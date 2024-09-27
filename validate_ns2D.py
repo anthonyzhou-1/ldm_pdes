@@ -16,7 +16,7 @@ def main(args):
     device = args.device
     load_dir = config["load_dir"]
     dataconfig = config['data']
-    verbose = config['verbose']
+    verbose = args.verbose
     batch_size = 1
     dataconfig['batch_size'] = batch_size
     root_dir = load_dir + "eval/"
