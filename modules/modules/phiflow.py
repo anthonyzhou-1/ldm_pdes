@@ -85,19 +85,19 @@ def simulate_fluid(inputs, buoyancy_y):
     return output_tensor
 
 
-def simulate_fluid_halfres(inputs, buoyancy_y):
+def simulate_fluid_lowres(inputs, buoyancy_y, k = 2):
     # inputs in shape b nt nx ny nc 
     nt = 56
     tmin = 18.0
     tmax = 102.0
-    nx = ny = 64 
+    nx = ny = 128 // k 
     Lx = Ly = 32
     nu = 0.01
     dt = (tmax - tmin) / nt
 
     # resimulate the fluid based on the inputs
-    initial_smoke = inputs[0, 0, ::2, ::2, -1]
-    initial_velocity = inputs[0, 0, ::2, ::2, :2]
+    initial_smoke = inputs[0, 0, ::k, ::k, -1]
+    initial_velocity = inputs[0, 0, ::k, ::k, :2]
 
     initial_smoke = phi.math.tensor(initial_smoke, spatial('x,y'))
     initial_velocity =  phi.math.tensor(initial_velocity, spatial('x,y'), channel('vector'))

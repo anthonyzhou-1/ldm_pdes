@@ -10,7 +10,7 @@ import os.path
 from tqdm import tqdm
 import argparse
 import copy 
-from modules.modules.phiflow import simulate_fluid, simulate_fluid_halfres
+from modules.modules.phiflow import simulate_fluid, simulate_fluid_lowres
 import time
 
 def validate_cylinder(config, device):
@@ -241,6 +241,8 @@ def validate_ns2D(config, device):
     print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 def validate_ns2D_phiflow(config, device):
+    ABLATE_PHIFLOW = True
+
     load_dir = config["load_dir"]
     dataconfig = config['data']
     batch_size = 1
@@ -324,10 +326,11 @@ def validate_ns2D_phiflow(config, device):
             end_time_sim = time.time()
             log["solution_resolved"] = solution_resolved    
 
-            start_time_sim_halfres = time.time()
-            solution_lowres = simulate_fluid_halfres(log['samples'], buoyancy_y)
-            end_time_sim_halfres = time.time()
-            log["solution_resolved_halfres"] = solution_lowres
+            if ABLATE_PHIFLOW:
+                start_time_sim_halfres = time.time()
+                solution_lowres = simulate_fluid_lowres(log['samples'], buoyancy_y, k=4)
+                end_time_sim_halfres = time.time()
+                log["solution_resolved_halfres"] = solution_lowres
 
             if idx % plot_interval == 0:
 
@@ -350,8 +353,9 @@ def validate_ns2D_phiflow(config, device):
             resolved_loss = F.l1_loss(log["solution_resolved"], log["samples"]).item()
             resolved_losses.append(resolved_loss)
 
-            resolved_loss_halfres = F.l1_loss(log["solution_resolved_halfres"], log["solution_resolved"]).item()
-            resolved_losses_halfres.append(resolved_loss_halfres)
+            if ABLATE_PHIFLOW:
+                resolved_loss_halfres = F.l1_loss(log["solution_resolved_halfres"], log["solution_resolved"]).item()
+                resolved_losses_halfres.append(resolved_loss_halfres)
 
             idx += 1
 
@@ -365,8 +369,11 @@ def validate_ns2D_phiflow(config, device):
             all_times.append(elapsed_time)
             sim_time = round(end_time_sim - start_time_sim, 3)
             all_times_sim.append(sim_time)
-            sim_time_halfres = round(end_time_sim_halfres - start_time_sim_halfres, 3)
-            all_times_sim_halfres.append(sim_time_halfres)
+
+            sim_time_halfres = 0
+            if ABLATE_PHIFLOW:
+                sim_time_halfres = round(end_time_sim_halfres - start_time_sim_halfres, 3)
+                all_times_sim_halfres.append(sim_time_halfres)
             print(f"Sim Time: {sim_time} seconds, Half Sim Time: {sim_time_halfres}, Sample Time: {elapsed_time} seconds, Batch: {idx}, Rec Loss: {rec_loss}, Resolved Loss: {resolved_loss}, HalfRes Loss: {resolved_loss_halfres} Buoyancy: {buoyancy_y}")
 
     with open(root_dir + "/all_losses.pkl", "wb") as f:
