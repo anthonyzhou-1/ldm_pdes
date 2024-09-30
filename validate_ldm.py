@@ -44,11 +44,14 @@ def validate_cylinder(config, device):
 
     num_samples = len(valid_loader.dataset) # should be 100 
 
-    plot_interval = 1
+    plot_interval = 10
     all_losses = []
     all_times = []
 
     for idx in tqdm(range(0, num_samples)):
+        if idx % plot_interval != 0:
+            idx += 1
+            continue
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
 
         cells = batch.pop("cells")
