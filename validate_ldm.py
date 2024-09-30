@@ -10,7 +10,7 @@ import os.path
 from tqdm import tqdm
 import argparse
 import copy 
-from modules.modules.phiflow import simulate_fluid
+from modules.modules.phiflow import simulate_fluid, simulate_fluid_halfres
 import time
 
 def validate_cylinder(config, device):
@@ -275,6 +275,11 @@ def validate_ns2D_phiflow(config, device):
     plot_interval = 1 
     all_losses = []
     resolved_losses = []
+    resolved_losses_halfres = []
+
+    all_times = [] 
+    all_times_sim = []
+    all_times_sim_halfres = []
 
     print("Number of samples: ", num_samples)
     print("Plot interval: ", plot_interval)
@@ -296,7 +301,6 @@ def validate_ns2D_phiflow(config, device):
                 print(f"Loaded stats, Batch: {idx}, Rec Loss: {rec_loss}, Resolved Loss: {resolved_loss}")
                 continue
 
-            start_time = time.time()
             if pl_module.use_embed: 
                 prompt = batch.pop("prompt")
 
@@ -305,18 +309,25 @@ def validate_ns2D_phiflow(config, device):
             if pl_module.use_embed:
                 batch["prompt"] = prompt
 
-            log = pl_module.log_images(batch, N=batch_size)
+            start_time = time.time()
+            log = pl_module.log_images(batch, N=batch_size, plot_diffusion_rows=False, plot_denoise_rows=False)
+            end_time = time.time()
 
             log['inputs'] = log['inputs'].detach().cpu()
             log['samples'] = log['samples'].detach().cpu()
             buoyancy_y = batch['cond'].detach().cpu().squeeze().item()
 
             del log["reconstruction"]
-            del log["diffusion_row"]
-            del log["denoise_row"]
 
+            start_time_sim = time.time()
             solution_resolved = simulate_fluid(log['samples'], buoyancy_y) # assumes batch size of 1
+            end_time_sim = time.time()
             log["solution_resolved"] = solution_resolved    
+
+            start_time_sim_halfres = time.time()
+            solution_lowres = simulate_fluid_halfres(log['samples'], buoyancy_y)
+            end_time_sim_halfres = time.time()
+            log["solution_resolved_halfres"] = solution_lowres
 
             if idx % plot_interval == 0:
 
@@ -339,6 +350,9 @@ def validate_ns2D_phiflow(config, device):
             resolved_loss = F.l1_loss(log["solution_resolved"], log["samples"]).item()
             resolved_losses.append(resolved_loss)
 
+            resolved_loss_halfres = F.l1_loss(log["solution_resolved_halfres"], log["solution_resolved"]).item()
+            resolved_losses_halfres.append(resolved_loss_halfres)
+
             idx += 1
 
             with open(root_dir + f"/losses_{idx}.pkl", "wb") as f:
@@ -347,15 +361,22 @@ def validate_ns2D_phiflow(config, device):
             with open(root_dir + f"/resolved_losses_{idx}.pkl", "wb") as f:
                 pickle.dump(resolved_loss, f)
 
-            end_time = time.time()
             elapsed_time = round(end_time - start_time, 3)
-            print(f"Time: {elapsed_time} seconds, Batch: {idx}, Rec Loss: {rec_loss}, Resolved Loss: {resolved_loss}, Buoyancy: {buoyancy_y}")
+            all_times.append(elapsed_time)
+            sim_time = round(end_time_sim - start_time_sim, 3)
+            all_times_sim.append(sim_time)
+            sim_time_halfres = round(end_time_sim_halfres - start_time_sim_halfres, 3)
+            all_times_sim_halfres.append(sim_time_halfres)
+            print(f"Sim Time: {sim_time} seconds, Half Sim Time: {sim_time_halfres}, Sample Time: {elapsed_time} seconds, Batch: {idx}, Rec Loss: {rec_loss}, Resolved Loss: {resolved_loss}, HalfRes Loss: {resolved_loss_halfres} Buoyancy: {buoyancy_y}")
 
     with open(root_dir + "/all_losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
 
     with open(root_dir + "/resolved_losses.pkl", "wb") as f:
         pickle.dump(resolved_losses, f)
+
+    with open(root_dir + "/resolved_losses_halfres.pkl", "wb") as f:
+        pickle.dump(resolved_losses_halfres, f)
     
     with open(root_dir + "/mean_loss.txt", "w") as text_file:
         text_file.write(str(torch.mean(torch.tensor(all_losses))))
@@ -365,6 +386,18 @@ def validate_ns2D_phiflow(config, device):
 
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
     print("Mean Resolved L1 Loss: ", torch.mean(torch.tensor(resolved_losses)))
+
+    with open(root_dir + "/all_times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
+    
+    with open(root_dir + "/all_times_sim.pkl", "wb") as f:
+        pickle.dump(all_times_sim, f)
+
+    with open(root_dir + "/all_times_sim_halfres.pkl", "wb") as f:
+        pickle.dump(all_times_sim_halfres, f)
+    
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
+    print("Mean Sim Time: ", torch.mean(torch.tensor(all_times_sim)))
 
 def main(args):
     config=get_yaml(args.config)
