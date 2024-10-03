@@ -1,4 +1,5 @@
-# Latent Diffusion for PDEs
+# Text2PDE: Latent Diffusion Models for Accessible Physics Simulation
+Official implementation of Latent Diffusion Models for Accessible Physics Simulation. [(Paper)](https://arxiv.org/abs/2410.01153)
 ![Text-Conditioned Samples](./pics/text_examples.png)
 
 
