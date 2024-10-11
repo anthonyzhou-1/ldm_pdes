@@ -78,7 +78,7 @@ Workflow for training a model:
 Workflow for inference:
 ```
 - Download a pretrained LDM and AE model
-- For text evaluation/FLOPs: setup PhiFlow/Deepspeed
+- If doing text re-solving or FLOPs profiling: setup PhiFlow/Deepspeed
 - Set paths to pretrained model and logging directory
 - Approximate memory requirements for inference w/ batch size = 1:
     - LDM_small: 6.7 GB
