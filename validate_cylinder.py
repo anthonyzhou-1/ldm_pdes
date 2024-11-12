@@ -15,7 +15,7 @@ def validate_cylinder(config, device):
     dataconfig = config['data']
     modelconfig = config['model']
     trainconfig = config['training']
-    #verbose = config['verbose']
+    verbose = config['verbose']
 
     batch_size = 1
     dataconfig['batch_size'] = batch_size
