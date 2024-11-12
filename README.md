@@ -1,4 +1,7 @@
-# Latent Diffusion for PDEs
+# Text2PDE: Latent Diffusion Models for Accessible Physics Simulation
+Official implementation of Latent Diffusion Models for Accessible Physics Simulation. [(Paper)](https://arxiv.org/abs/2410.01153)
+
+
 ![Text-Conditioned Samples](./pics/text_examples.png)
 
 
@@ -75,7 +78,7 @@ Workflow for training a model:
 Workflow for inference:
 ```
 - Download a pretrained LDM and AE model
-- For text evaluation/FLOPs: setup PhiFlow/Deepspeed
+- If doing text re-solving or FLOPs profiling: setup PhiFlow/Deepspeed
 - Set paths to pretrained model and logging directory
 - Approximate memory requirements for inference w/ batch size = 1:
     - LDM_small: 6.7 GB
@@ -115,6 +118,7 @@ To train a baseline model for the smoke buoyancy (ns2D) problem:
 python train_{ns2D/acdm}.py --config=path/to/config
 ```
 Note that the FNO, Unet, and Resnet models all use the same script (train_ns2D.py).
+
 Example: train a FNO baseline on the NS2D dataset
 ```
 python train_ns2D.py --config=configs/ns2D/baselines/fno.yaml
@@ -136,7 +140,7 @@ For LDM and ACDM models, to conditionally sample from the validation set and eva
 python validate_ldm.py --config=path/to/config
 ```
 
-Example: sample a pretrained medium-size LDM by conditioning on first-frames in a cylinder validation set.
+Example: sample a pretrained medium-size LDM by conditioning on text in a cylinder validation set.
 ```
 python validate_ldm.py --config=configs/cylinder/ldm/text/ldm_DiT_text.yaml
 ```
