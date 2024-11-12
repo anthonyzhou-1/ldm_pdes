@@ -69,9 +69,9 @@ def validate_cylinder(config, device):
 
     idx = 0 
     for batch in tqdm(valid_loader):
-        #if idx % plot_interval != 0:
-        #    idx += 1
-        #    continue
+        if idx % plot_interval != 0:
+            idx += 1
+            continue
 
         batch = {k: v.to(pl_module.device) for k, v in batch.items()}
 
@@ -91,7 +91,7 @@ def validate_cylinder(config, device):
         x = x.squeeze()
         rec = rec.squeeze()
 
-        '''
+        
         if idx % plot_interval == 0:
             mesh_pos_batch = pos[0, 0, :, :2]
             cells = batch["cells"]
@@ -111,7 +111,6 @@ def validate_cylinder(config, device):
 
             with open(root_dir + f"results_{idx}.pkl", "wb") as f:
                 pickle.dump(save_dict, f)
-        '''
 
         rec_loss = criterion(rec, x)
         all_losses.append(rec_loss)
@@ -129,7 +128,7 @@ def validate_cylinder(config, device):
     with open(root_dir + "times.pkl", "wb") as f:
         pickle.dump(all_times, f)
     
-    print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean Loss: ", torch.mean(torch.tensor(all_losses)))
     print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 

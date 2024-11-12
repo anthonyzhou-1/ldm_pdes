@@ -12,6 +12,7 @@ import argparse
 import copy 
 from modules.modules.phiflow import simulate_fluid, simulate_fluid_lowres
 import time
+from modules.losses.loss import ScaledLpLoss
 
 def validate_cylinder(config, device):
     load_dir = config["load_dir"]
@@ -44,14 +45,17 @@ def validate_cylinder(config, device):
 
     num_samples = len(valid_loader.dataset) # should be 100 
 
+    criterion = ScaledLpLoss(p=2)
+    # criterion = torch.nn.L1Loss()
+
     plot_interval = 10
     all_losses = []
     all_times = []
 
     for idx in tqdm(range(0, num_samples)):
-        if idx % plot_interval != 0:
-            idx += 1
-            continue
+        #if idx % plot_interval != 0:
+        #    idx += 1
+        #    continue
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
 
         cells = batch.pop("cells")
@@ -75,7 +79,8 @@ def validate_cylinder(config, device):
             log['inputs'] = log['inputs'][:, :, :length] # 1 t m c
             log['samples'] = log['samples'][:, :, :length] # 1 t m c
             pos = pos[:, :, :length] # b t m 3
-
+        
+        '''
         if idx % plot_interval == 0:
 
             mesh_pos = pos[0, 0, :, :2].detach().cpu() # m, 2
@@ -103,8 +108,9 @@ def validate_cylinder(config, device):
             if pl_module.use_embed:
                 with open(root_dir + f"prompt_{idx}.txt", "w") as text_file:
                     text_file.write(prompt)
+        '''
 
-        loss = F.l1_loss(log["inputs"], log["samples"]) 
+        loss = criterion(log["samples"], log["inputs"])
         all_losses.append(loss)
         all_times.append(end - start)
 
