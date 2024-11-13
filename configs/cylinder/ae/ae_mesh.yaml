@@ -87,7 +87,7 @@ training:
   checkpoint: null 
   dataset_size: 1000
   default_root_dir: logs/
-  devices: [1]
+  devices: [2]
   dist: False
   learning_rate: 1.0e-05
   log_every_n_steps: 128
