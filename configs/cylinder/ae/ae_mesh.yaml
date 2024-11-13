@@ -64,7 +64,7 @@ model:
       - 64
       - 64
       - 64
-      gno_radius: 0.0425
+      gno_radius: 0.033
       gno_transform_type: linear
       gno_use_torch_scatter: true
       hidden_channels: 64
