@@ -3,13 +3,13 @@ model_path: /home/ayz2/ldm_fluids/logs/GINO_autoencoderKL_16_normed_batched2024-
 model_name: ae
 
 data:
-  batch_size: 4
+  batch_size: 1
   num_workers: 16
   mode: cylinder
   dataset:
     data_dir: /home/ayz2/data/deepmind/cylinder_flow/mesh
     time_horizon: 25
-    padding: True 
+    padding: False
     max_len: 2060
     use_embed: False
   normalizer:
@@ -82,15 +82,15 @@ model:
 training:
   seed: 42
   accelerator: gpu
-  accumulate_grad_batches: 1
+  accumulate_grad_batches: 4
   check_val_every_n_epoch: 5
   checkpoint: null 
   dataset_size: 1000
   default_root_dir: logs/
   devices: [1]
-  dist: false
+  dist: False
   learning_rate: 1.0e-05
-  log_every_n_steps: 32
+  log_every_n_steps: 128
   max_epochs: 1000
   pct_start: 0.15
   scheduler: Cosine
