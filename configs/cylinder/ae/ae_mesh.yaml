@@ -36,7 +36,7 @@ model:
       - 64
       - 64
       - 64
-      gno_radius: 0.0425
+      gno_radius: 0.033
       gno_transform_type: linear
       gno_use_torch_scatter: true
       hidden_channels: 64
@@ -97,5 +97,5 @@ training:
   strategy: auto
 
 wandb:
-  name: wandb_name
-  project: wandb_project
+  name: meshAE_ablate_radius_0.033
+  project: ldm_autoencoder
