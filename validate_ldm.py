@@ -15,13 +15,13 @@ import time
 from modules.losses.loss import ScaledLpLoss
 from modules.modules.ddim import DDIMSampler
 
-def validate_cylinder_ddim(config, device, ddim_steps):
+def validate_cylinder_ddim(config, device, ddim_steps, dir_name="eval"):
     load_dir = config["load_dir"]
     dataconfig = config['data']
     verbose = config['verbose']
     batch_size = 1
     dataconfig['batch_size'] = batch_size
-    root_dir = load_dir + "eval/"
+    root_dir = load_dir + f"{dir_name}/"
     os.makedirs(root_dir, exist_ok=True)
 
     datamodule = FluidsDataModule(dataconfig)
@@ -151,6 +151,12 @@ def validate_cylinder_ddim(config, device, ddim_steps):
 
     with open(root_dir + "mean_loss.txt", "w") as text_file:
         text_file.write(str(torch.mean(torch.tensor(all_losses))))
+    
+    with open(root_dir + "mean_loss_l1.txt", "w") as text_file:
+        text_file.write(str(torch.mean(torch.tensor(all_losses_l1))))
+    
+    with open(root_dir + "mean_time.txt", "w") as text_file:
+        text_file.write(str(torch.mean(torch.tensor(all_times))))
 
     print("Mean L2 Loss: ", torch.mean(torch.tensor(all_losses)))
     print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses_l1)))
@@ -563,13 +569,30 @@ def validate_ns2D_phiflow(config, device):
     print("Mean Sim Time: ", torch.mean(torch.tensor(all_times_sim)))
 
 def main(args):
-    config=get_yaml(args.config)
-    config['verbose'] = args.verbose
-    mode = config['data']['mode'] # get mode
-    config["training"]['devices'] = 1 # set devices to 1
-    device = args.device
-    ddim_steps = args.ddim_steps
+    ddim_steps = [10, 20, 50, 100]
+    config_paths = ["configs/cylinder/ldm/FF/ldm_DiT_FF.yaml",
+                    "configs/cylinder/ldm/FF/ldm_DiTSmall_FF.yaml",
+                    "configs/cylinder/ldm/text/ldm_DiT_text.yaml",
+                    "configs/cylinder/ldm/FF/ldm_DiTSmall_text.yaml",]
+                    #"configs/ns2D/ldm/FF/ldm_DiT_FF.yaml",
+                    #"configs/ns2D/ldm/FF/ldm_DiTLarge_FF.yaml",
+                    #"configs/ns2D/ldm/FF/ldm_DiTSmall_FF.yaml"]
 
+    for config_path in config_paths:
+        for ddim_step in ddim_steps:
+            config=get_yaml(config_path)
+            config['verbose'] = args.verbose
+            mode = config['data']['mode'] # get mode
+            config["training"]['devices'] = 1 # set devices to 1
+            device = args.device
+            desc = config['wandb']['name']
+
+            validate_cylinder_ddim(config, device, ddim_steps, dir_name=f"{desc}_DDIM_{ddim_step}")
+
+
+    #ddim_steps = args.ddim_steps
+
+    '''
     if mode == "cylinder":
         if ddim_steps > 0:
             validate_cylinder_ddim(config, device, ddim_steps)
@@ -581,6 +604,7 @@ def main(args):
         else:
             validate_ns2D(config, device)
 
+    '''
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an LDM')

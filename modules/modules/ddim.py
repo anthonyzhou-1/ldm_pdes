@@ -87,7 +87,7 @@ class DDIMSampler(object):
 
         self.make_schedule(ddim_num_steps=S, ddim_eta=eta, verbose=verbose)
         # sampling
-        print(f'Data shape for DDIM sampling is {shape}, eta {eta}')
+        #print(f'Data shape for DDIM sampling is {shape}, eta {eta}')
 
         samples, intermediates = self.ddim_sampling(conditioning, shape,
                                                     callback=callback,

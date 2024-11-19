@@ -1,4 +1,4 @@
-load_dir: logs/profiles/DiT_FF/
+load_dir: logs/ldm_ns2D/FF/DiTLarge/
 model_path: null
 
 data:
