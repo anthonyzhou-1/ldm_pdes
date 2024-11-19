@@ -308,7 +308,7 @@ class DiT(nn.Module):
         cond_pooled = self.y_embedder(cond_pooled)      # (N, D)
         c = t + cond_pooled                             # (N, D)
         for block in self.blocks:
-            x = block(x, c, context)                    # (N, T, D)
+            x = block(x, c, context, mask)              # (N, T, D)
         x = self.final_layer(x, c)                      # (N, T, patch_size ** (dim) * out_channels)
         x = self.unpatchify(x)                          # (N, out_channels, H, W)
         return x
