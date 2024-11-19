@@ -92,6 +92,7 @@ def validate_cylinder_ddim(config, device, ddim_steps):
             log["samples"] = x_samples
 
         end = time.time()
+        pos = batch["pos"] # b, t, m, 3
 
         if "pad_mask" in batch.keys(): # need to trim padded data
             length = torch.sum(batch["pad_mask"][0], dtype=torch.long)
