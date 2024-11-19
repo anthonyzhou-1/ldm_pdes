@@ -13,6 +13,147 @@ import copy
 from modules.modules.phiflow import simulate_fluid, simulate_fluid_lowres
 import time
 from modules.losses.loss import ScaledLpLoss
+from modules.modules.ddim import DDIMSampler
+
+def validate_cylinder_ddim(config, device, ddim_steps):
+    load_dir = config["load_dir"]
+    dataconfig = config['data']
+    verbose = config['verbose']
+    batch_size = 1
+    dataconfig['batch_size'] = batch_size
+    root_dir = load_dir + "eval/"
+    os.makedirs(root_dir, exist_ok=True)
+
+    datamodule = FluidsDataModule(dataconfig)
+
+    pl_module = LatentDiffusion(**config["model"],
+                                normalizer=datamodule.normalizer,
+                                use_embed=dataconfig["dataset"]["use_embed"])
+
+    path = config["model_path"]
+    if path is not None:
+        checkpoint = torch.load(path, map_location=device)
+        if "state_dict" in checkpoint.keys(): # sometimes the checkpoint is nested
+            checkpoint = checkpoint["state_dict"]
+        pl_module.load_state_dict(checkpoint)
+        print("LDM Model loaded from: ", path)
+    else:
+        print("No model path given, using random weights")
+    pl_module.eval()
+    pl_module = pl_module.to(device)
+
+    valid_loader = datamodule.val_dataloader()
+
+    num_samples = len(valid_loader.dataset) # should be 100 
+
+    criterion_l2 = ScaledLpLoss(p=2)
+    criterion_l1 = torch.nn.L1Loss()
+
+    plot_interval = 10
+    all_losses = []
+    all_losses_l1 = []
+    all_times = []
+
+    sampler = DDIMSampler(model=pl_module)
+
+    for idx in tqdm(range(0, num_samples)):
+        if idx % plot_interval != 0:
+            idx += 1
+            continue
+        batch = valid_loader.dataset.__getitem__(idx, eval=True)
+
+        cells = batch.pop("cells")
+        pos = batch["pos"] # b, t, m, 3
+        pad_mask = batch.get('pad_mask', None)
+        cond = batch.get('cond', None)
+
+        if pl_module.use_embed:
+            prompt = batch.pop("prompt")
+
+        batch = {k: v.unsqueeze(0).to(pl_module.device) for k, v in batch.items()}
+        if pl_module.use_embed:
+            batch["prompt"] = [prompt]
+
+        log = {}
+        start = time.time()
+        with torch.no_grad():
+            z, c, x, xrec, xc = pl_module.get_input(batch, 
+                                           return_first_stage_outputs=True,
+                                           force_c_encode=True,
+                                           return_original_cond=True,
+                                           bs=1)
+            log["inputs"] = pl_module.normalizer.denormalize(x) 
+            shape = (batch_size, pl_module.channels, pl_module.image_size[0], pl_module.image_size[1], pl_module.image_size[2])
+            samples, _= sampler.sample(S=ddim_steps,
+                                       batch_size=1,
+                                       conditioning=c,
+                                       shape=shape)
+            x_samples = pl_module.decode_first_stage(samples, pos, pad_mask=pad_mask, cond=cond) # decode denoised latent into x_sample
+            log["samples"] = x_samples
+
+        end = time.time()
+
+        if "pad_mask" in batch.keys(): # need to trim padded data
+            length = torch.sum(batch["pad_mask"][0], dtype=torch.long)
+            log['inputs'] = log['inputs'][:, :, :length] # 1 t m c
+            log['samples'] = log['samples'][:, :, :length] # 1 t m c
+            pos = pos[:, :, :length] # b t m 3
+        
+        if idx % plot_interval == 0:
+
+            mesh_pos = pos[0, 0, :, :2].detach().cpu() # m, 2
+
+            inputs = log["inputs"][0, :, :, 0].detach().cpu() # t, m
+            path_inputs = root_dir + f"inputs_{idx}.png" 
+            plot_mesh(inputs, mesh_pos, cells, n_t=5, path=path_inputs)
+
+            sample = log["samples"][0, :, :, 0].detach().cpu() # t, m
+            path_sample = root_dir + f"sample_{idx}.png"
+            plot_mesh(sample, mesh_pos, cells, n_t=5, path=path_sample)
+
+            log['mesh_pos'] = mesh_pos
+
+            if pl_module.use_embed:
+                with open(root_dir + f"prompt_{idx}.txt", "w") as text_file:
+                    text_file.write(prompt)
+                log['prompt'] = prompt
+
+            with open(root_dir + f"log_{idx}.pkl", "wb") as f:
+                pickle.dump(log, f)
+
+            if pl_module.use_embed:
+                with open(root_dir + f"prompt_{idx}.txt", "w") as text_file:
+                    text_file.write(prompt)
+        
+
+        loss = criterion_l2(log["samples"], log["inputs"])
+        loss_l1 = criterion_l1(log["samples"], log["inputs"])
+        all_losses.append(loss)
+        all_losses_l1.append(loss_l1)
+        all_times.append(end - start)
+
+        if verbose:
+            print("L2 Loss: ", loss)
+            print("L1 Loss: ", loss_l1)
+            print("Time: ", end - start)
+
+    del all_times[0] # remove first time as it is usually an outlier
+
+    with open(root_dir + "losses.pkl", "wb") as f:
+        pickle.dump(all_losses, f)
+    
+    with open(root_dir + "losses_l1.pkl", "wb") as f:
+        pickle.dump(all_losses_l1, f)
+
+    with open(root_dir + "times.pkl", "wb") as f:
+        pickle.dump(all_times, f)
+
+    with open(root_dir + "mean_loss.txt", "w") as text_file:
+        text_file.write(str(torch.mean(torch.tensor(all_losses))))
+
+    print("Mean L2 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses_l1)))
+    print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 def validate_cylinder(config, device):
     load_dir = config["load_dir"]
@@ -45,17 +186,18 @@ def validate_cylinder(config, device):
 
     num_samples = len(valid_loader.dataset) # should be 100 
 
-    criterion = ScaledLpLoss(p=2)
-    # criterion = torch.nn.L1Loss()
+    criterion_l2 = ScaledLpLoss(p=2)
+    criterion_l1 = torch.nn.L1Loss()
 
     plot_interval = 10
     all_losses = []
+    all_losses_l1 = []
     all_times = []
 
     for idx in tqdm(range(0, num_samples)):
-        #if idx % plot_interval != 0:
-        #    idx += 1
-        #    continue
+        if idx % plot_interval != 0:
+            idx += 1
+            continue
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
 
         cells = batch.pop("cells")
@@ -80,7 +222,7 @@ def validate_cylinder(config, device):
             log['samples'] = log['samples'][:, :, :length] # 1 t m c
             pos = pos[:, :, :length] # b t m 3
         
-        '''
+        
         if idx % plot_interval == 0:
 
             mesh_pos = pos[0, 0, :, :2].detach().cpu() # m, 2
@@ -108,20 +250,26 @@ def validate_cylinder(config, device):
             if pl_module.use_embed:
                 with open(root_dir + f"prompt_{idx}.txt", "w") as text_file:
                     text_file.write(prompt)
-        '''
+        
 
-        loss = criterion(log["samples"], log["inputs"])
+        loss = criterion_l2(log["samples"], log["inputs"])
+        loss_l1 = criterion_l1(log["samples"], log["inputs"])
         all_losses.append(loss)
+        all_losses_l1.append(loss_l1)
         all_times.append(end - start)
 
         if verbose:
-            print("Loss: ", loss)
+            print("L2 Loss: ", loss)
+            print("L1 Loss: ", loss_l1)
             print("Time: ", end - start)
 
     del all_times[0] # remove first time as it is usually an outlier
 
     with open(root_dir + "losses.pkl", "wb") as f:
         pickle.dump(all_losses, f)
+    
+    with open(root_dir + "losses_l1.pkl", "wb") as f:
+        pickle.dump(all_losses_l1, f)
 
     with open(root_dir + "times.pkl", "wb") as f:
         pickle.dump(all_times, f)
@@ -129,7 +277,8 @@ def validate_cylinder(config, device):
     with open(root_dir + "mean_loss.txt", "w") as text_file:
         text_file.write(str(torch.mean(torch.tensor(all_losses))))
 
-    print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean L2 Loss: ", torch.mean(torch.tensor(all_losses)))
+    print("Mean L1 Loss: ", torch.mean(torch.tensor(all_losses_l1)))
     print("Mean Time: ", torch.mean(torch.tensor(all_times)))
 
 def validate_ns2D(config, device):
@@ -418,9 +567,13 @@ def main(args):
     mode = config['data']['mode'] # get mode
     config["training"]['devices'] = 1 # set devices to 1
     device = args.device
+    ddim_steps = args.ddim_steps
 
     if mode == "cylinder":
-        validate_cylinder(config, device)
+        if ddim_steps > 0:
+            validate_cylinder_ddim(config, device, ddim_steps)
+        else:
+            validate_cylinder(config, device)
     elif mode == "ns2D":
         if "phiflow" in config.keys() and config["phiflow"]:
             validate_ns2D_phiflow(config, device)
@@ -433,6 +586,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", default=None)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--verbose", default=False) 
+    parser.add_argument("--ddim_steps", default=0, type=int)
     args = parser.parse_args()
 
     main(args)
