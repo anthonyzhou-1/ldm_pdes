@@ -63,7 +63,6 @@ def validate_cylinder_ddim(config, device, ddim_steps):
         batch = valid_loader.dataset.__getitem__(idx, eval=True)
 
         cells = batch.pop("cells")
-        pos = batch["pos"] # b, t, m, 3
         pad_mask = batch.get('pad_mask', None)
         cond = batch.get('cond', None)
 
@@ -87,8 +86,9 @@ def validate_cylinder_ddim(config, device, ddim_steps):
             samples, _= sampler.sample(S=ddim_steps,
                                        batch_size=1,
                                        conditioning=c,
-                                       shape=shape)
-            x_samples = pl_module.decode_first_stage(samples, pos, pad_mask=pad_mask, cond=cond) # decode denoised latent into x_sample
+                                       shape=shape,
+                                       verbose=False)
+            x_samples = pl_module.decode_first_stage(samples, batch['pos'], pad_mask=pad_mask, cond=cond) # decode denoised latent into x_sample
             log["samples"] = x_samples
 
         end = time.time()
