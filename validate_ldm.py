@@ -49,7 +49,7 @@ def validate_cylinder_ddim(config, device, ddim_steps):
     criterion_l2 = ScaledLpLoss(p=2)
     criterion_l1 = torch.nn.L1Loss()
 
-    plot_interval = 10
+    plot_interval = 1
     all_losses = []
     all_losses_l1 = []
     all_times = []
