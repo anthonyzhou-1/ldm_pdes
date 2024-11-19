@@ -587,7 +587,7 @@ def main(args):
             device = args.device
             desc = config['wandb']['name']
 
-            validate_cylinder_ddim(config, device, ddim_steps, dir_name=f"{desc}_DDIM_{ddim_step}")
+            validate_cylinder_ddim(config, device, ddim_step, dir_name=f"{desc}_DDIM_{ddim_step}")
 
 
     #ddim_steps = args.ddim_steps
