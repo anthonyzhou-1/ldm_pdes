@@ -581,7 +581,7 @@ def main(args):
     for config_path in config_paths:
         for ddim_step in ddim_steps:
             config=get_yaml(config_path)
-            config['verbose'] = args.verbose
+            config['verbose'] = False
             mode = config['data']['mode'] # get mode
             config["training"]['devices'] = 1 # set devices to 1
             device = args.device
