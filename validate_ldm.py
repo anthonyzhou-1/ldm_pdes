@@ -570,10 +570,10 @@ def validate_ns2D_phiflow(config, device):
 
 def main(args):
     ddim_steps = [10, 20, 50, 100]
-    config_paths = ["configs/cylinder/ldm/FF/ldm_DiT_FF.yaml",
-                    "configs/cylinder/ldm/FF/ldm_DiTSmall_FF.yaml",
+    config_paths = [#"configs/cylinder/ldm/FF/ldm_DiT_FF.yaml",
+                    #"configs/cylinder/ldm/FF/ldm_DiTSmall_FF.yaml",
                     "configs/cylinder/ldm/text/ldm_DiT_text.yaml",
-                    "configs/cylinder/ldm/FF/ldm_DiTSmall_text.yaml",]
+                    "configs/cylinder/ldm/text/ldm_DiTSmall_text.yaml",]
                     #"configs/ns2D/ldm/FF/ldm_DiT_FF.yaml",
                     #"configs/ns2D/ldm/FF/ldm_DiTLarge_FF.yaml",
                     #"configs/ns2D/ldm/FF/ldm_DiTSmall_FF.yaml"]
