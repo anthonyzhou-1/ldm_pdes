@@ -3,12 +3,13 @@ import torch.nn as nn
 import numpy as np
 from einops.layers.torch import Rearrange
 from modules.models.transformer import TimestepEmbedder
+from modules.modules.conv4d import Conv4d
 
 TYPE = "group"
 
 def conv_nd(dims, *args, **kwargs):
     """
-    Create a 1D, 2D, or 3D convolution module.
+    Create a 1D, 2D, 3D, or 4D convolution module.
     """
     if dims == 1:
         return nn.Conv1d(*args, **kwargs)
@@ -16,6 +17,8 @@ def conv_nd(dims, *args, **kwargs):
         return nn.Conv2d(*args, **kwargs)
     elif dims == 3:
         return nn.Conv3d(*args, **kwargs)
+    elif dims == 4:
+        return Conv4d(*args, **kwargs)
     raise ValueError(f"unsupported dimensions: {dims}")
 
 def nonlinearity(x):
@@ -45,11 +48,13 @@ class Upsample(nn.Module):
                                 padding=1)
 
     def forward(self, x):
-        x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
+        if len(x.shape) == 6: # interpolate doesn't support 6D
+            x = torch.kron(x, torch.ones(2, 2, 2, 2, device=x.device))  # upsample w/ kronecker product
+        else:
+            x = torch.nn.functional.interpolate(x, scale_factor=2.0, mode="nearest")
         if self.with_conv:
             x = self.conv(x)
         return x
-
 
 class Downsample(nn.Module):
     def __init__(self, in_channels, with_conv, dim=3):
@@ -69,6 +74,10 @@ class Downsample(nn.Module):
         if self.with_conv:
             if self.dim == 3:
                 pad = (0,1,0,1,0,1)
+                x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
+                x = self.conv(x)
+            elif self.dim == 4:
+                pad = (0,1,0,1,0,1,0,1)
                 x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
                 x = self.conv(x)
             else:
@@ -193,7 +202,10 @@ class AttnBlock(nn.Module):
         v = self.v(h_)
 
         # compute attention
-        if self.dim == 3:
+        if self.dim == 4:
+            b, c, t, d, h, w = q.shape
+            num_tokens = h*w*d*t
+        elif self.dim == 3:
             b,c,d,h,w = q.shape
             num_tokens = h*w*d
         else:
@@ -212,7 +224,9 @@ class AttnBlock(nn.Module):
         w_ = w_.permute(0,2,1)   # b,hwd,hwd (first hw of k, second of q)
         h_ = torch.bmm(v,w_)     # b, c,hwd (hw of q) h_[b,c,j] = sum_i v[b,c,i] w_[b,i,j]
 
-        if self.dim == 3: 
+        if self.dim == 4:
+            h_ = h_.reshape(b,c,t,d,h,w)
+        elif self.dim == 3: 
             h_ = h_.reshape(b,c,d,h,w)
         else:
             h_ = h_.reshape(b,c,h,w)
@@ -237,7 +251,7 @@ class CNN_Encoder(nn.Module):
                  z_channels, 
                  ch_mult=(1,2,4,8), 
                  num_res_blocks = 2,
-                 resolution = 64, 
+                 resolution = (28, 64, 64), 
                  attn_resolutions = [16], 
                  dropout=0.0, 
                  double_z=True, 
@@ -255,6 +269,7 @@ class CNN_Encoder(nn.Module):
         attn_type = "vanilla"
         resamp_with_conv = True
         self.tanh_out = tanh_out
+        self.dim = dim 
 
         print("Initializing encoder")
 
@@ -287,6 +302,7 @@ class CNN_Encoder(nn.Module):
                 block_in = block_out
                 if curr_res in attn_resolutions:
                     attn.append(make_attn(block_in, attn_type=attn_type, dim=dim))
+                    print(f"added attn at res {curr_res}")
             down = nn.Module()
             down.block = block
             down.attn = attn
@@ -295,6 +311,7 @@ class CNN_Encoder(nn.Module):
                 curr_res = curr_res // 2
             self.down.append(down)
 
+        print("lowest_res", curr_res)
         # middle
         self.mid = nn.Module()
         self.mid.block_1 = ResnetBlock(in_channels=block_in,
@@ -386,6 +403,7 @@ class CNN_Decoder(nn.Module):
         self.tanh_out = tanh_out
         attn_type = "vanilla"
         resamp_with_conv = True
+        self.dim = dim
 
         print("Initializing decoder")
 
@@ -396,7 +414,10 @@ class CNN_Decoder(nn.Module):
             resolution = (resolution, resolution, resolution)
 
         curr_res = resolution[-1] // 2**(self.num_resolutions-1)
-        self.z_shape = (1,z_channels,resolution[0] // 2**(self.num_resolutions-1), resolution[1] // 2**(self.num_resolutions-1), resolution[2] // 2**(self.num_resolutions-1)) 
+        if dim == 3:
+            self.z_shape = (1,z_channels,resolution[0] // 2**(self.num_resolutions-1), resolution[1] // 2**(self.num_resolutions-1), resolution[2] // 2**(self.num_resolutions-1)) 
+        elif dim == 4:
+            self.z_shape = (1,z_channels,resolution[0] // 2**(self.num_resolutions-1), resolution[1] // 2**(self.num_resolutions-1), resolution[2] // 2**(self.num_resolutions-1), resolution[3] // 2**(self.num_resolutions-1)) 
         print("Working with z of shape {} = {} dimensions.".format(
             self.z_shape, np.prod(self.z_shape)))
 
@@ -437,6 +458,7 @@ class CNN_Decoder(nn.Module):
                 block_in = block_out
                 if curr_res in attn_resolutions:
                     attn.append(make_attn(block_in, attn_type=attn_type, dim=dim))
+                    print(f"added attn at res {curr_res}")
             up = nn.Module()
             up.block = block
             up.attn = attn
@@ -494,18 +516,20 @@ class ConditionalEncoder(nn.Module):
         ):
 
         super().__init__()
-        if "use_fourier" in config:
-            self.use_fourier = config["use_fourier"]
+        self.use_fourier = config["use_fourier"] if "use_fourier" in config else False
+        
+        if self.use_fourier:
             self.fourier_emb = TimestepEmbedder(config["encoder"]["hidden_channels"])
             print("Using fourier emb")
             if config["encoder"]["cond_channels"] != config["encoder"]["hidden_channels"]:
                 config["encoder"]["cond_channels"] = config["encoder"]["hidden_channels"]
                 print("Warning, setting cond_channels to hidden_channels for fourier emb")
-        else:
-            self.use_fourier = False
 
         self.encoder = CNN_Encoder(**config["encoder"])
-        self.flatten = Rearrange('b c n1 n2 -> b (n1 n2) c')
+        if config['encoder']['dim'] == 2:
+            self.flatten = Rearrange('b c n1 n2 -> b (n1 n2) c')
+        else:
+            self.flatten = Rearrange('b c n1 n2 n3-> b (n1 n2 n3) c')
         self.head = nn.Linear(config["encoder"]['z_channels'], config['out_dim'])
 
     def forward(self, x, cond=None):
@@ -520,7 +544,7 @@ class ConditionalEncoder(nn.Module):
             conditioning information (like buoyancy)
             shape (b 1)
         """
-        if self.use_fourier:
+        if self.use_fourier and cond is not None:
             if len(cond.shape) > 1:
                 cond = cond.squeeze(1) # b 1 -> b
             cond = self.fourier_emb(cond)

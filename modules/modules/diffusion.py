@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from einops import repeat
+from modules.modules.conv4d import Conv4d
 
 TYPE = "group"
 
@@ -225,6 +226,8 @@ def conv_nd(dims, *args, **kwargs):
         return nn.Conv2d(*args, **kwargs)
     elif dims == 3:
         return nn.Conv3d(*args, **kwargs)
+    elif dims == 4:
+        return Conv4d(*args, **kwargs)
     raise ValueError(f"unsupported dimensions: {dims}")
 
 

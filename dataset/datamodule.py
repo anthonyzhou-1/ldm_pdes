@@ -1,8 +1,6 @@
 import lightning as L
 from torch.utils.data import DataLoader
-from dataset.cylinder import CylinderMeshDataset
-from dataset.smoke_data import train_datapipe_ns_cond, valid_datapipe_ns_cond
-from modules.modules.normalizer import Normalizer
+from modules.modules.normalizer import Normalizer, Normalizer3D
 from modules.utils import Struct
 import copy
 
@@ -24,17 +22,28 @@ class FluidsDataModule(L.LightningDataModule):
             self.drop_last = False
 
         if self.mode == "ns2D":
+            from dataset.smoke_data import train_datapipe_ns_cond, valid_datapipe_ns_cond
             self.train_dataset = train_datapipe_ns_cond(Struct(**dataset_config)) # change dict to object to support dot notation
             self.val_dataset = valid_datapipe_ns_cond(Struct(**dataset_config))
             
         elif self.mode == "cylinder":
+            from dataset.cylinder import CylinderMeshDataset
             data_dir = copy.copy(dataconfig['dataset']["data_dir"])
             dataconfig['dataset']["data_dir"] = data_dir + "/train_downsampled_labeled.h5"
             self.train_dataset = CylinderMeshDataset(**dataset_config)
             dataconfig['dataset']["data_dir"] = data_dir + "/valid_downsampled_labeled.h5"
             self.val_dataset = CylinderMeshDataset(**dataset_config)
-            
-        self.normalizer = Normalizer(dataset=self.train_dataset,
+        
+        elif self.mode == "turb3D":
+            from dataset.turb import Turb3DDataset
+            self.train_dataset = Turb3DDataset(split="train", **dataset_config)
+            self.val_dataset = Turb3DDataset(split="valid", **dataset_config)
+        
+        if self.mode == "turb3D":
+            self.normalizer = Normalizer3D(dataset=self.train_dataset,
+                                             **normalizer_config)
+        else:
+            self.normalizer = Normalizer(dataset=self.train_dataset,
                                      **normalizer_config)
 
     def prepare_data(self):

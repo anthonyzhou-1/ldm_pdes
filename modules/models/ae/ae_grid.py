@@ -6,6 +6,7 @@ from modules.models.discriminator import NLayerDiscriminator3D
 from modules.losses.loss import LPIPSWithDiscriminator, KL_Loss
 from modules.losses.lpips import LPIPS_DPOT
 from einops.layers.torch import Rearrange
+from einops import repeat
 
 class Autoencoder(L.LightningModule):
     def __init__(self,
@@ -206,8 +207,14 @@ class AutoencoderKL(L.LightningModule):
         self.encoder = CNN_Encoder(**aeconfig["encoder"])
         self.decoder = CNN_Decoder(**aeconfig["decoder"])
 
-        self.to_conv_shape = Rearrange('b t h w c -> b c t h w')
-        self.to_input_shape = Rearrange('b c t h w -> b t h w c')
+        if self.encoder.dim == 3:
+            self.to_conv_shape = Rearrange('b t h w c -> b c t h w')
+            self.to_input_shape = Rearrange('b c t h w -> b t h w c')
+        elif self.encoder.dim == 4:
+            from modules.losses.loss import LogTKESpectrumL2Distance, TurbulentKineticEnergySpectrum
+            self.to_conv_shape = Rearrange('b t h w d c -> b c t h w d')
+            self.to_input_shape = Rearrange('b c t h w d -> b t h w d c')
+            self.tke_loss = LogTKESpectrumL2Distance(TurbulentKineticEnergySpectrum())
 
         self.lpips = None
         self.discriminator = None
@@ -221,8 +228,8 @@ class AutoencoderKL(L.LightningModule):
 
         self.save_hyperparameters()
         
-        #print("Training with batch size", self.batch_size)
-        #print("Training with accumulation steps", self.accumulation_steps)
+        print("Training with batch size", self.batch_size)
+        print("Training with accumulation steps", self.accumulation_steps)
 
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path)
@@ -258,34 +265,48 @@ class AutoencoderKL(L.LightningModule):
         return dec, posterior
 
     def training_step(self, batch, batch_idx):
-        inputs = batch["x"]
+        inputs = batch["x"] # b t d h w c
         cond = batch.get("cond", None)
+        mask = batch.get("mask", None) # b d h w
 
         inputs = self.normalizer.normalize(inputs, cond)
+
+        if mask is not None:
+            mask = repeat(mask, 'b d h w -> b t d h w c', c=inputs.shape[-1], t=inputs.shape[1])
+            inputs = inputs * mask # make sure masked places in inputs are still zero after normalization
 
         if isinstance(inputs, tuple):
             inputs, cond = inputs
 
         inputs = self.to_conv_shape(inputs)
-        reconstructions, posterior = self(inputs, cond=cond)
+        reconstructions, posterior = self(inputs, cond=cond) 
+
+        inputs = self.to_input_shape(inputs)
+        reconstructions = self.to_input_shape(reconstructions)
 
         loss, log_dict = self.loss(inputs, reconstructions, posterior,
-                                   split="train", normalizer=self.normalizer)
+                                   split="train", mask=mask, normalizer=self.normalizer)
 
         self.log_dict(log_dict, prog_bar=False, logger=True, on_step=True, on_epoch=True, sync_dist=self.dist)
-        lr = self.optimizers().param_groups[0]['lr']
-        self.log('lr', lr, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=self.dist)
 
-        sch = self.lr_schedulers()
-        sch.step()
+        if (batch_idx + 1) % self.accumulation_steps == 0:
+            lr = self.optimizers().param_groups[0]['lr']
+            self.log('lr', lr, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=self.dist)
+            sch = self.lr_schedulers()
+            sch.step() 
 
         return loss 
 
     def validation_step(self, batch, batch_idx, eval=False):
         inputs = batch["x"]
         cond = batch.get("cond", None)
+        mask = batch.get("mask", None) # mask is one where obstacle exists, zero elsewhere
 
         inputs = self.normalizer.normalize(inputs, cond)
+
+        if mask is not None:
+            mask = repeat(mask, 'b d h w -> b t d h w c', c=inputs.shape[-1], t=inputs.shape[1])
+            inputs = inputs * mask # make sure masked places in inputs are still zero after scaling
 
         if isinstance(inputs, tuple):
             inputs, cond = inputs
@@ -293,13 +314,27 @@ class AutoencoderKL(L.LightningModule):
         inputs = self.to_conv_shape(inputs)
         reconstructions, posterior = self(inputs, cond=cond)
 
+        inputs = self.to_input_shape(inputs)
+        reconstructions = self.to_input_shape(reconstructions)
+
         if eval:
-            reconstructions = self.to_input_shape(reconstructions)
             reconstructions = self.normalizer.denormalize(reconstructions)
+            reconstructions = reconstructions * mask # make sure masked places in inputs are still zero after scaling
             return reconstructions
 
         loss, log_dict = self.loss(inputs, reconstructions, posterior,
-                                   split="val", normalizer=self.normalizer)
+                                   split="val", mask=mask, normalizer=self.normalizer)
+        
+        if self.encoder.dim == 4:
+            reconstructions = self.to_conv_shape(reconstructions)
+            inputs = self.to_conv_shape(inputs) # b c t d h w
+            tke_losses = []
+            for i in range(4):
+                idx_start = i*24
+                tke_loss, _, _, _ = self.tke_loss(reconstructions[:, :, :, idx_start:idx_start+24], inputs[:, :, :, idx_start:idx_start+24])
+                tke_losses.append(tke_loss)
+            mean_tke_loss = torch.mean(torch.stack(tke_losses))
+            log_dict["val/tke_loss"] = mean_tke_loss
         
         self.log_dict(log_dict, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=self.dist)
 

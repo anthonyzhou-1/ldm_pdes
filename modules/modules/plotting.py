@@ -7,7 +7,6 @@ from scipy import ndimage
 from copy import deepcopy
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 import numpy as np
-from vape4d import render
 
 def diverging_alpha(cmap: Colormap) -> Colormap:
     """changes the alpha channel of a colormap to be diverging (0->1, 0.5 > 0, 1->1)
@@ -34,6 +33,7 @@ def diverging_alpha(cmap: Colormap) -> Colormap:
     return cmap
 
 def plot_3d_rows(u, t=[1.0], path=None):
+    from vape4d import render
     # u in shape n_steps b t d h w c
     colormap = diverging_alpha(plt.get_cmap("magma"))
     u = u[:, 0, :, :, :, :, :3]  # n_steps nt nz nx ny 3 take only velocity components
@@ -81,6 +81,7 @@ def plot_3d_rows(u, t=[1.0], path=None):
     plt.close()
 
 def plot_3d_batch(u, t=[1.0], path=None):
+    from vape4d import render
     # u in shape b t d h w c
     colormap = diverging_alpha(plt.get_cmap("magma"))
     u = u[0, :, :, :, :, :3]  # nt nz nx ny 3 take only velocity components
@@ -126,6 +127,7 @@ def plot_3d_batch(u, t=[1.0], path=None):
     plt.close()
 
 def plot_3d(u, path, t=1.0):
+    from vape4d import render
     # u in shape t d h w
     colormap = diverging_alpha(plt.get_cmap("magma"))
     img = render(

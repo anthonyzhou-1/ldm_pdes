@@ -56,7 +56,7 @@ class PatchEmbed(nn.Module):
 
     def forward(self, x):
         x = self.proj(x)
-        if self.flatten:
+        if self.flatten: 
             x = x.flatten(2).transpose(1, 2)  # NCHW -> NLC
         x = self.norm(x)
         return x
@@ -192,11 +192,11 @@ class DiT(nn.Module):
         self.context_dim = context_dim  
 
         self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True, dim=dim)
-        self.t_embedder = TimestepEmbedder(hidden_size)
+        self.t_embedder = TimestepEmbedder(hidden_size//2)
         self.y_embedder = nn.Sequential(
             nn.Linear(context_dim, hidden_size, bias=True),
             nn.SiLU(),
-            nn.Linear(hidden_size, hidden_size, bias=True),
+            nn.Linear(hidden_size, hidden_size//2, bias=True),
         ) if context_dim is not None else nn.Identity()
         num_patches = self.x_embedder.num_patches
         # Will use learnable sin-cos embedding:
@@ -230,11 +230,16 @@ class DiT(nn.Module):
         elif self.dim == 3:
             pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], self.x_embedder.grid_size)
             self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+        
+        elif self.dim == 4:
+            pos_embed = get_4d_sincos_pos_embed(self.pos_embed.shape[-1], self.x_embedder.grid_size)
+            self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
 
         # Initialize patch_embed like nn.Linear (instead of nn.Conv):
-        w = self.x_embedder.proj.weight.data
-        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
+        if self.dim != 4:
+            w = self.x_embedder.proj.weight.data
+            nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+            nn.init.constant_(self.x_embedder.proj.bias, 0)
 
         # Initialize label embedding:
         if self.context_dim is not None:
@@ -259,7 +264,7 @@ class DiT(nn.Module):
     def unpatchify(self, x):
         """
         x: (N, T, patch_size**(dim) * C)
-        imgs: (N, (D), H, W, C)
+        imgs: (N, (t), (D), H, W, C)
         """
         c = self.out_channels
         patch_sizes = self.x_embedder.patch_size
@@ -280,6 +285,14 @@ class DiT(nn.Module):
             x = x.reshape(shape=(x.shape[0], d, h, w, pd, ph, pw, c))
             x = torch.einsum('ndhwopqc->ncdohpwq', x)
             imgs = x.reshape(shape=(x.shape[0], c, d * pd, h * ph, w * pw))
+        
+        elif len(grid_size) == 4:
+            t, d, h, w = grid_size
+            pt, pd, ph, pw = patch_sizes
+            x = x.reshape(shape=(x.shape[0], t, d, h, w, pt, pd, ph, pw, c))
+            x = torch.einsum('ntdhwmopqc->nctmdohpwq', x)
+            imgs = x.reshape(shape=(x.shape[0], c, t * pt, d * pd, h * ph, w * pw))
+
         return imgs
     
     def masked_mean(self, x, mask=None):
@@ -293,7 +306,7 @@ class DiT(nn.Module):
     def forward(self, x, t, context):
         """
         Forward pass of DiT.
-        x: (N, C, (D), H, W) tensor of spatial inputs (images or latent representations of images)
+        x: (N, C, (t), (D), H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         cond: (N, L, D) tensor of conditioning info
         """
@@ -302,13 +315,13 @@ class DiT(nn.Module):
         else:
             mask = None
 
-        x = self.x_embedder(x) + self.pos_embed         # (N, T, D), where T = H * W *(D) / patch_size ** (dim)
-        t = self.t_embedder(t)                          # (N, D)
+        x = self.x_embedder(x) + self.pos_embed         # (N, T, D), where T = H * W * (D) *(t) / patch_size ** (dim)
+        t = self.t_embedder(t)                          # (N, D//2)
         cond_pooled = self.masked_mean(context, mask)   # (N, D), avg pool over tokens in prompt
-        cond_pooled = self.y_embedder(cond_pooled)      # (N, D)
-        c = t + cond_pooled                             # (N, D)
+        cond_pooled = self.y_embedder(cond_pooled)      # (N, D//2)
+        c = torch.cat([t, cond_pooled], dim=-1)         # (N, D)
         for block in self.blocks:
-            x = block(x, c, context, mask)              # (N, T, D)
+            x = block(x, c, context)                    # (N, T, D)
         x = self.final_layer(x, c)                      # (N, T, patch_size ** (dim) * out_channels)
         x = self.unpatchify(x)                          # (N, out_channels, H, W)
         return x
@@ -337,6 +350,27 @@ class DiT(nn.Module):
 #################################################################################
 # https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
     
+def get_4d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
+    """
+    grid_size: int of the grid time, depth, height, width
+    return:
+    pos_embed: [grid_size*grid_size*grid_size*grid_size, embed_dim] or [1+grid_size*grid_size*grid_size, embed_dim] (w/ or w/o cls_token)
+    """
+
+    grid_t = np.arange(grid_size[0], dtype=np.float32)
+    grid_d = np.arange(grid_size[1], dtype=np.float32)
+    grid_h = np.arange(grid_size[2], dtype=np.float32)
+    grid_w = np.arange(grid_size[3], dtype=np.float32)
+
+    grid = np.meshgrid(grid_t, grid_d, grid_h, grid_w)
+    grid = np.stack(grid, axis=0)
+
+    grid = grid.reshape([4, 1, grid_size[0], grid_size[1], grid_size[2], grid_size[3]])
+    pos_embed = get_4d_sincos_pos_embed_from_grid(embed_dim, grid)
+    if cls_token and extra_tokens > 0:
+        pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
+    return pos_embed
+
 def get_3d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
     """
     grid_size: int of the grid height, width, and depth
@@ -372,11 +406,27 @@ def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=
         pos_embed = np.concatenate([np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0)
     return pos_embed
 
+def get_4d_sincos_pos_embed_from_grid(embed_dim, grid):
+    """
+    embed_dim: output dimension for each position
+    grid: size of DiT input (T, D, H, W)
+    out: (T*D*H*W, embed_dim)
+    """
+    assert embed_dim % 4 == 0, "dim must be divisible by 4"
+
+    emb_t = get_1d_sincos_pos_embed_from_grid(embed_dim // 4, grid[0])  # (T, D/4)
+    emb_d = get_1d_sincos_pos_embed_from_grid(embed_dim // 4, grid[1])  # (D, D/4)
+    emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 4, grid[2])  # (H, D/4)
+    emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 4, grid[3])  # (W, D/4)
+
+    emb = np.concatenate([emb_t, emb_d, emb_h, emb_w], axis=1)  # (T*D*H*W, D)
+
+    return emb
 
 def get_3d_sincos_pos_embed_from_grid(embed_dim, grid):
     """
     embed_dim: output dimension for each position
-    grid: a list of positions to be encoded: size (3, 1, D, H, W)
+    grid: size of DiT input (D, H, W)
     out: (D*H*W, embed_dim)
     """
     if embed_dim % 3 == 0:

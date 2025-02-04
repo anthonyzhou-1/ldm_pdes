@@ -4,7 +4,7 @@ import torch
 import os 
 
 from modules.utils import get_yaml, save_yaml 
-from modules.modules.callbacks import GridPlottingCallback, MeshPlottingCallback
+from modules.modules.callbacks import GridPlottingCallback, MeshPlottingCallback, PlottingCallback3D
 from dataset.datamodule import FluidsDataModule
 
 import lightning as L
@@ -53,13 +53,17 @@ def main(args):
         else:
             ae = AutoencoderKL
         eval_callback = MeshPlottingCallback()
-    else:
+    elif dataconfig["mode"] == "ns2D":
         from modules.models.ae.ae_grid import Autoencoder, AutoencoderKL
         if "loss" in lossconfig.keys(): # use more complex autoencoder w/ GAN and LPIPS
             ae = Autoencoder
         else:
             ae = AutoencoderKL
         eval_callback = GridPlottingCallback()
+    elif dataconfig["mode"] == "turb3D":
+        from modules.models.ae.ae_grid import AutoencoderKL
+        ae = AutoencoderKL
+        eval_callback = PlottingCallback3D()
 
     model = ae(aeconfig, 
             lossconfig, 
