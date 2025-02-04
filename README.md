@@ -10,7 +10,7 @@ title={Text2PDE: Latent Diffusion Models for Accessible Physics Simulation},
 author={Anthony Zhou and Zijie Li and Michael Schneier and John R Buchanan Jr and Amir Barati Farimani},
 booktitle={The Thirteenth International Conference on Learning Representations},
 year={2025},
-url={https://openreview.net/forum?id=Nb3a8aUGfj}
+url={https://openreview.net/forum?id=Nb3a8aUGfj}}
 ```
 
 ## Requirements
