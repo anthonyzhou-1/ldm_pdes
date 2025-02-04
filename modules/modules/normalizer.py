@@ -5,6 +5,147 @@ import os.path
 import torch 
 import numpy as np
 from tqdm import tqdm
+import numpy.ma as ma
+from einops import repeat
+
+class Normalizer3D:
+    def __init__(self,
+                 use_norm = True,
+                 stat_path = "./",
+                 dataset=None,
+                 scaler = "normal",
+                 recalculate = False,
+                 conditional = False):
+        self.use_norm = use_norm
+        self.conditional = conditional
+        self.scaler = scaler # normal or minmax
+       
+        if not self.use_norm:
+            print("Normalization is turned off")
+            return 
+
+        if os.path.isfile(stat_path) and not recalculate:
+            self.load_stats(stat_path)
+            print("Statistics loaded from", stat_path)
+        else:
+            assert dataset is not None, "Data must be provided for normalization"
+            print("Calculating statistics for normalization")
+            
+            if self.scaler == "normal":
+                u_scaler = StandardScaler()
+                v_scaler = StandardScaler()
+                w_scaler = StandardScaler()
+                p_scaler = StandardScaler()
+            else:
+                raise ValueError("Scaler must be either 'normal' or 'minmax'")
+
+            for i in range(len(dataset)):
+                batch = dataset.__getitem__(i, eval=True)
+                data = batch['x']
+                mask = batch['mask']
+                mask = np.expand_dims(~mask, axis=[0,4])
+                mask = repeat(mask, '1 d h w 1 -> t d h w c', t = data.shape[0], c = data.shape[4])
+                x_ma = ma.array(data, mask=mask)
+                data = x_ma.filled(np.nan) # fill masked values with nan so scaler will ignore them
+
+                u, v, w, p = self.get_data(data)
+
+                u_scaler.partial_fit(u.reshape(-1, 1))
+                v_scaler.partial_fit(v.reshape(-1, 1))
+                w_scaler.partial_fit(w.reshape(-1, 1))
+                p_scaler.partial_fit(p.reshape(-1, 1))
+
+            if self.scaler == "normal":
+                self.u_mean = u_scaler.mean_.item()
+                self.u_std = np.sqrt(u_scaler.var_).item()
+                self.v_mean = v_scaler.mean_.item()
+                self.v_std = np.sqrt(v_scaler.var_).item()
+                self.w_mean = w_scaler.mean_.item()
+                self.w_std = np.sqrt(w_scaler.var_).item()
+                self.p_mean = p_scaler.mean_.item()
+                self.p_std = np.sqrt(p_scaler.var_).item()
+                
+            self.save_stats(path=stat_path)
+            print("Statistics saved to", stat_path)
+
+        self.print_stats()
+
+        self.u_mean = torch.tensor(self.u_mean)
+        self.u_std = torch.tensor(self.u_std)
+        self.v_mean = torch.tensor(self.v_mean)
+        self.v_std = torch.tensor(self.v_std)
+        self.w_mean = torch.tensor(self.w_mean)
+        self.w_std = torch.tensor(self.w_std)
+        self.p_mean = torch.tensor(self.p_mean)
+        self.p_std = torch.tensor(self.p_std)
+
+    def get_data(self, data):
+        # data in shape [batch, t, nz, nx, ny, c]
+        u = data[..., 0]
+        v = data[..., 1]
+        w = data[..., 2]
+        p = data[..., 3]
+
+        return u, v, w, p
+    
+    def assemble_data(self, u, v, w, p):
+        return torch.stack([u, v, w, p], dim=-1)
+
+    def print_stats(self):
+        print(f"u mean: {self.u_mean}, u std: {self.u_std}")
+        print(f"v mean: {self.v_mean}, v std: {self.v_std}")
+        print(f"w mean: {self.v_mean}, w std: {self.v_std}")
+        print(f"p mean: {self.p_mean}, p std: {self.p_std}")
+
+
+    def save_stats(self, path):
+        with open(path, "wb") as f:
+                pickle.dump([self.u_mean, self.u_std, self.v_mean, self.v_std, self.w_mean, self.w_std, self.p_mean, self.p_std], f)
+
+    def load_stats(self, path):
+        with open(path, "rb") as f:
+            self.u_mean, self.u_std, self.v_mean, self.v_std, self.w_mean, self.w_std, self.p_mean, self.p_std = pickle.load(f)
+
+    def normalize_cond(self, cond):
+        # not implemented
+        return cond
+    
+    def denormalize_cond(self, cond):
+        # not implemented
+        return cond
+    
+    def normalize(self, x, cond = None):
+        if not self.use_norm:
+            return x
+
+        x_norm = x.clone()
+        u_norm, v_norm, w_norm, p_norm = self.get_data(x_norm)
+
+        u_norm = (u_norm - self.u_mean) / self.u_std
+        v_norm = (v_norm - self.v_mean) / self.v_std
+        w_norm = (w_norm - self.w_mean) / self.w_std
+        p_norm = (p_norm - self.p_mean) / self.p_std
+
+        x_norm = self.assemble_data(u_norm, v_norm, w_norm, p_norm)
+
+        return x_norm
+
+    def denormalize(self, x, cond = None): 
+        if not self.use_norm:
+            return x
+
+        x_denorm = x.clone()
+        u_denorm, v_denorm, w_denorm, p_denorm = self.get_data(x_denorm)
+
+        if self.scaler == "normal":
+            u_denorm = u_denorm * self.u_std + self.u_mean
+            v_denorm = v_denorm * self.v_std + self.v_mean
+            w_denorm = w_denorm * self.w_std + self.w_mean
+            p_denorm = p_denorm * self.p_std + self.p_mean
+
+        x_denorm = self.assemble_data(u_denorm, v_denorm, w_denorm, p_denorm)
+
+        return x_denorm
 
 class Normalizer:
     def __init__(self,

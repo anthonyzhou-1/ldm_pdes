@@ -4,6 +4,153 @@ from matplotlib import tri as mtri
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from scipy import ndimage
+from copy import deepcopy
+from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
+import numpy as np
+from vape4d import render
+
+def diverging_alpha(cmap: Colormap) -> Colormap:
+    """changes the alpha channel of a colormap to be diverging (0->1, 0.5 > 0, 1->1)
+
+    Args:
+        cmap (Colormap): colormap
+
+    Returns:
+        Colormap: new colormap
+    """
+    cmap = cmap.copy()
+    if isinstance(cmap, ListedColormap):
+        cmap.colors = deepcopy(cmap.colors)
+        for i, a in enumerate(cmap.colors):
+            a.append(2 * abs(i / cmap.N - 0.5))
+    elif isinstance(cmap, LinearSegmentedColormap):
+        cmap._segmentdata["alpha"] = np.array(
+            [[0.0, 1.0, 1.0], [0.5, 0.0, 0.0], [1.0, 1.0, 1.0]]
+        )
+    else:
+        raise TypeError(
+            "cmap must be either a ListedColormap or a LinearSegmentedColormap"
+        )
+    return cmap
+
+def plot_3d_rows(u, t=[1.0], path=None):
+    # u in shape n_steps b t d h w c
+    colormap = diverging_alpha(plt.get_cmap("magma"))
+    u = u[:, 0, :, :, :, :, :3]  # n_steps nt nz nx ny 3 take only velocity components
+    u = torch.norm(u, dim=-1) # n_steps nt nz nx ny
+
+    u = torch.flip(u, dims=[2, 4]) # orient in 3D space correctly just for plotting
+    u = torch.rot90(u, k=1, dims=[3, 4])
+
+    fig, axs = plt.subplots(u.shape[0], len(t), figsize=(6*len(t), 6*u.shape[0]))
+
+    for i in range(u.shape[0]):
+        for j in range(len(t)):
+            img = render(
+                u[i],
+                colormap,
+                t[j], # timestep
+                width=512,
+                height=512,
+            )
+
+            axs[i][j].imshow(img)
+            axs[i][j].axis("off")
+            axs[i][j].title.set_text(f'Step: {j}, Timestep: {t[j]}')
+    
+    plt.savefig(path, bbox_inches="tight", pad_inches=0)
+    plt.close()
+
+    fig, axs = plt.subplots(u.shape[0], len(t), figsize = (12*u.shape[0], 12*len(t)))
+
+    tmax = u.shape[1] - 1
+    
+    for i in range(u.shape[0]):
+        for j in range(len(t)):
+            t_plot = int(t[j]*tmax)
+            u_slice = u[i, t_plot, :, :, 12]
+            im = axs[i][j].imshow(ndimage.rotate(u_slice, 90), cmap='viridis')
+            axs[i][j].title.set_text(f'Step: {i}, Timestep: {t[j]}')
+    
+    fig.subplots_adjust(right=0.85)
+    cbar_ax = fig.add_axes([0.88, 0.15, 0.01, 0.7])
+
+    fig.colorbar(im, cax=cbar_ax)
+
+    plt.savefig(path.replace(".png", "_slice.png"), bbox_inches="tight", pad_inches=0)
+    plt.close()
+
+def plot_3d_batch(u, t=[1.0], path=None):
+    # u in shape b t d h w c
+    colormap = diverging_alpha(plt.get_cmap("magma"))
+    u = u[0, :, :, :, :, :3]  # nt nz nx ny 3 take only velocity components
+    u = torch.norm(u, dim=-1) # nt nz nx ny
+
+    u = torch.flip(u, dims=[1, 3]) # orient in 3D space correctly just for plotting
+    u = torch.rot90(u, k=1, dims=[2, 3])
+
+    fig, axs = plt.subplots(1, len(t), figsize=(6*len(t), 6))
+
+    for j in range(len(t)):
+        img = render(
+            u,
+            colormap,
+            t[j], # timestep
+            width=512,
+            height=512,
+        )
+
+        axs[j].imshow(img)
+        axs[j].axis("off")
+        axs[j].title.set_text(f'Timestep: {t[j]}')
+    
+    plt.savefig(path, bbox_inches="tight", pad_inches=0)
+    plt.close()
+
+    fig, axs = plt.subplots(1, len(t), figsize = (12*len(t), 12))
+
+    tmax = u.shape[0] - 1
+    
+    for j in range(len(t)):
+        t_plot = int(t[j]*tmax)
+        u_slice = u[t_plot, :, :, 12]
+        im = axs[j].imshow(ndimage.rotate(u_slice, 90), cmap='viridis')
+        axs[j].title.set_text(f'Step: {j}, Timestep: {t[j]}')
+    
+    fig.subplots_adjust(right=0.85)
+    cbar_ax = fig.add_axes([0.88, 0.15, 0.01, 0.7])
+
+    fig.colorbar(im, cax=cbar_ax)
+
+    plt.savefig(path.replace(".png", "_slice.png"), bbox_inches="tight", pad_inches=0)
+    plt.close()
+
+def plot_3d(u, path, t=1.0):
+    # u in shape t d h w
+    colormap = diverging_alpha(plt.get_cmap("magma"))
+    img = render(
+            # [T,D,H,W]
+            torch.flip(u, dims=[1, 3]),
+            colormap,
+            t, # timestep
+            width=1024,
+            height=1024,
+        )
+
+    plt.imshow(img)
+    plt.axis("off")
+
+    plt.savefig(path, bbox_inches="tight", pad_inches=0)
+    plt.close() 
+
+    tmax = u.shape[0] - 1
+    t_plot = int(t*tmax)
+    u_slice = u[t_plot, :, :, 12] # get the slice at the middle of the domain
+
+    plt.imshow(u_slice, cmap='viridis')
+    plt.colorbar(orientation='horizontal')
+    plt.savefig(path.replace(".png", "_slice.png"), bbox_inches="tight", pad_inches=0)
+    plt.close()
 
 def plot_mesh_batch(u, mesh_pos, cells, n_t, path=None):
     # u in shape n_diff, nt m

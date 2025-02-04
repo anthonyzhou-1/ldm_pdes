@@ -569,30 +569,12 @@ def validate_ns2D_phiflow(config, device):
     print("Mean Sim Time: ", torch.mean(torch.tensor(all_times_sim)))
 
 def main(args):
-    ddim_steps = [10, 20, 50, 100]
-    config_paths = [#"configs/cylinder/ldm/FF/ldm_DiT_FF.yaml",
-                    #"configs/cylinder/ldm/FF/ldm_DiTSmall_FF.yaml",
-                    "configs/cylinder/ldm/text/ldm_DiT_text.yaml",
-                    "configs/cylinder/ldm/text/ldm_DiTSmall_text.yaml",]
-                    #"configs/ns2D/ldm/FF/ldm_DiT_FF.yaml",
-                    #"configs/ns2D/ldm/FF/ldm_DiTLarge_FF.yaml",
-                    #"configs/ns2D/ldm/FF/ldm_DiTSmall_FF.yaml"]
+    config=get_yaml(args.config)
+    config['verbose'] = False
+    mode = config['data']['mode'] # get mode
+    device = args.device
+    ddim_steps = args.ddim_steps
 
-    for config_path in config_paths:
-        for ddim_step in ddim_steps:
-            config=get_yaml(config_path)
-            config['verbose'] = False
-            mode = config['data']['mode'] # get mode
-            config["training"]['devices'] = 1 # set devices to 1
-            device = args.device
-            desc = config['wandb']['name']
-
-            validate_cylinder_ddim(config, device, ddim_step, dir_name=f"{desc}_DDIM_{ddim_step}")
-
-
-    #ddim_steps = args.ddim_steps
-
-    '''
     if mode == "cylinder":
         if ddim_steps > 0:
             validate_cylinder_ddim(config, device, ddim_steps)
@@ -604,7 +586,7 @@ def main(args):
         else:
             validate_ns2D(config, device)
 
-    '''
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate an LDM')

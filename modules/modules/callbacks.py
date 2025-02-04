@@ -4,13 +4,15 @@ import torch
 import torch.nn.functional as F
 import wandb
 import pickle 
-from modules.modules.plotting import plot_mesh, plot_mesh_batch, plot_grid, plot_grid_batch
+from modules.modules.plotting import plot_mesh, plot_mesh_batch, plot_grid, plot_grid_batch, plot_3d, plot_3d_batch, plot_3d_rows
 import matplotlib.pyplot as plt 
 import contextlib
 import copy
 import os
 import threading
 from typing import Any, Dict, Iterable
+from modules.losses.loss import ScaledLpLoss, LogTKESpectrumL2Distance, TurbulentKineticEnergySpectrum
+from einops import rearrange
 
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
@@ -206,6 +208,88 @@ class GINOCallback(Callback):
         with open(trainer.default_root_dir + "/results.pkl", "wb") as f:
             pickle.dump(save_dict, f)
 
+class Turb3DLDMCallback(Callback):
+    def __init__(self) -> None:
+        super().__init__()
+        self.best_loss = 100
+        self.l2 = ScaledLpLoss()
+        self.tke = LogTKESpectrumL2Distance(TurbulentKineticEnergySpectrum())
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        #if pl_module.current_epoch == 0:
+        #    return 
+        
+        if pl_module.global_rank == 0:
+            try:
+                with torch.no_grad():
+                    valid_loader = trainer.val_dataloaders
+                    dataset = valid_loader.dataset 
+                    batch = dataset.__getitem__(0, eval=True)
+
+                    use_prompt = False 
+                    if 'prompt' in batch.keys():
+                        prompt = batch.pop("prompt")
+                        with open(trainer.default_root_dir + "/prompt.txt", "w") as text_file:
+                            text_file.write(prompt)
+                        use_prompt = True
+
+                    batch = {k: torch.tensor(v).unsqueeze(0).to(pl_module.device) for k, v in batch.items()} 
+                    
+                    if use_prompt:
+                        batch["prompt"] = [prompt]
+                    
+                    log = pl_module.log_images(batch)
+
+                    with open(trainer.default_root_dir + "/log.pkl", "wb") as f:
+                        pickle.dump(log, f)
+
+                    # inputs, rec, samples in shape b t d h w c
+                    # diffusion_row, denoise_row in shape n_steps b t d h w c
+                    t = [0, 0.3, 0.7, 1.0]
+                    inputs = log["inputs"].detach().cpu() # b t d h w c
+                    path_inputs = trainer.default_root_dir + "/inputs.png" 
+                    plot_3d_batch(inputs, t, path=path_inputs)
+
+                    reconstruction = log["reconstruction"].detach().cpu() # b t d h w c
+                    path_rec = trainer.default_root_dir + "/reconstruction.png"
+                    plot_3d_batch(reconstruction, t, path=path_rec)
+
+                    samples = log["samples"].detach().cpu() # b t d h w c
+                    path_samples = trainer.default_root_dir + "/samples.png"
+                    plot_3d_batch(samples, t, path=path_samples)
+
+                    diffusion_row = log["diffusion_row"].detach().cpu() # n_steps b t d h w c
+                    path_diffusion = trainer.default_root_dir + "/forward_diffusion.png"
+                    plot_3d_rows(diffusion_row, t, path=path_diffusion)
+
+                    denoise_row = log["denoise_row"].detach().cpu() # n_steps b t d h w c
+                    path_denoise = trainer.default_root_dir + f"/reverse_diffusion.png"
+                    plot_3d_rows(denoise_row, t, path=path_denoise)
+
+                    rec_loss = F.l1_loss(log["samples"], log["inputs"])
+                    wandb.log({"val/rec_loss": rec_loss, "trainer/global_step": trainer.global_step})
+
+                    l2_loss = self.l2(log["samples"], log["inputs"])
+                    wandb.log({"val/rel_l2_loss": l2_loss, "trainer/global_step": trainer.global_step})
+
+                    samples_tke = rearrange(log['samples'], 'b t d h w c -> b c t d h w')
+                    inputs_tke = rearrange(log['inputs'], 'b t d h w c -> b c t d h w')
+                    tke_losses = []
+                    self.tke = self.tke.to(pl_module.device)
+                    for i in range(4):
+                        idx_start = i*24
+                        tke_loss, _, _, _ = self.tke(samples_tke[:, :, :, idx_start:idx_start+24], inputs_tke[:, :, :, idx_start:idx_start+24])
+                        tke_losses.append(tke_loss)
+                    mean_tke_loss = torch.mean(torch.stack(tke_losses))
+                    wandb.log({"val/tke_loss": mean_tke_loss, "trainer/global_step": trainer.global_step})
+
+                    if l2_loss < self.best_loss:
+                        self.best_loss = rec_loss
+                        torch.save(pl_module.state_dict(), trainer.default_root_dir + "/best.ckpt")
+                        with open(trainer.default_root_dir + "/best_loss.txt", "w") as text_file:
+                            text_file.write(str(self.best_loss))
+            except:
+                print("Error in plotting callback")
 
 class GridLDMCallback(Callback):
     def __init__(self) -> None:
@@ -275,8 +359,8 @@ class MeshLDMCallback(Callback):
         self.best_loss = 100
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        if pl_module.current_epoch == 0:
-            return 
+        #if pl_module.current_epoch == 0:
+        #    return 
         
         if pl_module.global_rank == 0:
             valid_loader = trainer.val_dataloaders
@@ -284,13 +368,15 @@ class MeshLDMCallback(Callback):
 
             cells = batch.pop("cells")
 
-            if pl_module.use_embed:
+            use_prompt = True if 'prompt' in batch.keys() else False
+
+            if use_prompt:
                 prompt = batch.pop("prompt")
                 with open(trainer.default_root_dir + "/prompt.txt", "w") as text_file:
                     text_file.write(prompt)
 
             batch = {k: v.unsqueeze(0).to(pl_module.device) for k, v in batch.items()}
-            if pl_module.use_embed:
+            if use_prompt:
                 batch["prompt"] = [prompt]
 
             with torch.no_grad():
@@ -397,7 +483,7 @@ class MeshPlottingCallback(Callback):
                 print("Error in plotting callback")
 
 class GridPlottingCallback(Callback):
-    def on_save_checkpoint(self, trainer, pl_module, checkpoint) -> None:
+    def on_validation_epoch_end(self, trainer, pl_module) -> None:
         if pl_module.global_rank == 0:
             try: 
                 valid_loader = trainer.val_dataloaders
@@ -422,6 +508,86 @@ class GridPlottingCallback(Callback):
 
                 with open(trainer.default_root_dir + "/results.pkl", "wb") as f:
                     pickle.dump(save_dict, f)
+            except:
+                print("Error in plotting callback")
+
+class BaselineCallback3D(Callback):
+    def on_validation_epoch_end(self, trainer, pl_module) -> None:
+        valid_loader = trainer.val_dataloaders
+        dataset = valid_loader.dataset 
+        batch = dataset.__getitem__(0, eval=True)
+        batch = {k: torch.tensor(v).unsqueeze(0).to(pl_module.device) for k, v in batch.items()} 
+
+        with torch.no_grad():
+            all_errors, rec = pl_module.validation_step(batch, 0, eval=True)
+
+        x = batch["x"].detach().cpu()    # b nt nz nx ny c
+        rec = rec.detach().cpu()         # b nt nz nx ny c
+        all_errors = all_errors.detach().cpu() # nt
+        
+        u_batch = x[0, :, :, :, :, :3]  # nt nz nx ny 3
+        rec_batch = rec[0, :, :, :, :, :3]  # nt nz nx ny 3
+
+        u_batch = torch.norm(u_batch, dim=-1) # nt nz nx ny
+        rec_batch = torch.norm(rec_batch, dim=-1) # nt nz nx ny
+        
+        for t in [0.0, 0.5, 1.0]:
+            path_u = trainer.default_root_dir + f"/u_{t}.png"
+            path_rec = trainer.default_root_dir + f"/rec_{t}.png"
+
+            plot_3d(u_batch, path=path_u, t=t)
+            plot_3d(rec_batch, path=path_rec, t=t)
+
+        save_dict = {"x": x, "rec": rec}
+
+        with open(trainer.default_root_dir + "/results.pkl", "wb") as f:
+            pickle.dump(save_dict, f)
+
+        plt.plot(all_errors)
+        plt.savefig(trainer.default_root_dir + "/errors.png")
+        plt.close()
+
+class PlottingCallback3D(Callback):
+    def on_validation_epoch_end(self, trainer, pl_module) -> None:
+        #if pl_module.current_epoch == 0:
+        #    return 
+        if pl_module.global_rank == 0:
+            try: 
+                valid_loader = trainer.val_dataloaders
+                dataset = valid_loader.dataset 
+                batch = dataset.__getitem__(0, eval=True)
+                batch = {k: torch.tensor(v).unsqueeze(0).to(pl_module.device) for k, v in batch.items()} 
+
+                with torch.no_grad():
+                    rec = pl_module.validation_step(batch, 0, eval=True)
+
+                x = batch["x"].detach().cpu()    # b nt nz nx ny c
+                rec = rec.detach().cpu()         # b nt nz nx ny c
+                
+                u_batch = x[0, :, :, :, :, :3]  # nt nz nx ny 3 take only velocity components
+                rec_batch = rec[0, :, :, :, :, :3]  # nt nz nx ny 3
+
+                u_batch = torch.norm(u_batch, dim=-1) # nt nz nx ny
+                rec_batch = torch.norm(rec_batch, dim=-1) # nt nz nx ny
+
+                u_batch = torch.flip(u_batch, dims=[1, 3]) # orient in 3D space correctly just for plotting
+                u_batch = torch.rot90(u_batch, k=1, dims=[2, 3])
+
+                rec_batch = torch.flip(rec_batch, dims=[1, 3])
+                rec_batch = torch.rot90(rec_batch, k=1, dims=[2, 3])
+                
+                for t in [0.0, 0.5, 1.0]:
+                    path_u = trainer.default_root_dir + f"/u_{t}.png"
+                    path_rec = trainer.default_root_dir + f"/rec_{t}.png"
+
+                    plot_3d(u_batch, path=path_u, t=t)
+                    plot_3d(rec_batch, path=path_rec, t=t)
+
+                save_dict = {"x": x, "rec": rec}
+
+                with open(trainer.default_root_dir + "/results.pkl", "wb") as f:
+                    pickle.dump(save_dict, f)
+
             except:
                 print("Error in plotting callback")
 

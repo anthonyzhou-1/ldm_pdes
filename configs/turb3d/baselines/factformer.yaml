@@ -1,0 +1,49 @@
+load_dir: /pscratch/sd/a/ayz2/logs/Factformer_turb3D2024-11-17T17-07-34/
+model_path: /pscratch/sd/a/ayz2/logs/Factformer_turb3D2024-11-17T17-07-34/model_epoch=199-val/rollout_error=0.706.ckpt
+
+data:
+    batch_size: 1
+    num_workers: 4
+    mode: turb3D
+    drop_last: False
+    dataset:
+      data_dir: /pscratch/sd/a/ayz2/turb3D/data
+      time_horizon: 500
+      time_window: 240
+      time_stride: 5
+    normalizer:
+      use_norm: true 
+      scaler: normal
+      stat_path: /pscratch/sd/a/ayz2/turb3D/turb3d_norm_stats.pkl
+
+model:
+  name: factformer
+  resolution: [96, 24, 24]
+  factformer:
+    dim: 256
+    dim_head: 32
+    heads: 8
+    dim_in: 4
+    dim_out: 4
+    depth: 18
+
+training:
+  seed: 42
+  accelerator: gpu
+  accumulate_grad_batches: 4
+  check_val_every_n_epoch: 50
+  checkpoint: null
+  dataset_size: 45
+  default_root_dir: /pscratch/sd/a/ayz2/logs/
+  devices: 1
+  dist: false
+  learning_rate: 1.0e-05
+  log_every_n_steps: 18
+  max_epochs: 10000
+  pct_start: 0.15
+  scheduler: Cosine
+  strategy: auto
+
+wandb:
+  name: Factformer_turb3D
+  project: ldm_baselines

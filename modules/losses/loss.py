@@ -3,6 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import repeat, rearrange
 from modules.models.ddpm import mean_flat
+from scipy.special import roots_legendre
+import pickle 
+from pathlib import Path
+
+#https://github.com/martenlienen/generative-turbulence
+#https://github.com/pdearena/pdearena
 
 def scaledlp_loss(input: torch.Tensor, target: torch.Tensor, p: int = 2, reduction: str = "mean"):
     B = input.size(0)
@@ -197,9 +203,9 @@ class LPIPSWithDiscriminator(nn.Module):
 
         if split == "val":
             # calculate l1 loss during val on unnormalized data
-            rec_loss = torch.abs(normalizer.denormalize(inputs) - normalizer.denormalize(reconstructions)) 
+            rec_loss = torch.abs(normalizer.denormalize(inputs) - normalizer.denormalize(reconstructions)) / torch.norm(inputs, p=1)
         else:
-            rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous()) # shape [b, c, nt, nx, ny]
+            rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous()) / torch.norm(inputs, p=1) 
 
         if mask is not None:
             mask = repeat(mask, 'b nx ny -> b 1 1 nx ny') # mask is zero where data exists, one at obstacles/boundaries
@@ -317,8 +323,7 @@ class KL_Loss():
             rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous()) # shape [b, c, nt, nx, ny]
 
         if mask is not None:
-            mask = repeat(mask, 'b nx ny -> b 1 1 nx ny')
-            rec_loss = rec_loss * (1-mask) # propagate only the error where mask is zero
+            rec_loss = rec_loss * mask # propagate only the error where mask is True/one
 
         if pad_mask is not None:
             rec_loss = rec_loss * pad_mask # only propagate loss where mask is 1
@@ -338,4 +343,174 @@ class KL_Loss():
                 "{}/rec_loss".format(split): rec_loss.detach().mean(),
                 }
         return loss, log
+
+def interp3(grid: torch.Tensor, points: torch.Tensor) -> torch.Tensor:
+    """Tri-linearly interpolate data from regular 3D grids onto arbitrary points.
+
+    Arguments
+    ---------
+    grid
+        F-dimensional features at integer grid coordinates with shape (..., F, X, Y, Z)
+    points
+        3D points with shape (N, 3)
+
+    Returns
+    -------
+    Interpolation values with shape (..., N, F)
+    """
+
+    # Find the 8 neighboring grid point coordinates of each query point
+    p0 = torch.floor(points).long()
+    p1 = p0 + 1
+    x0, y0, z0 = torch.unbind(torch.floor(points).long(), dim=-1)
+    x1 = x0 + 1
+    y1 = y0 + 1
+    z1 = z0 + 1
+
+    # Ensure indices are within grid bounds
+    lower_bounds = grid.new_zeros(3, dtype=torch.long)
+    upper_bounds = grid.new_tensor(grid.shape[-3:], dtype=torch.long) - 1
+    p0 = torch.clamp(p0, lower_bounds, upper_bounds)
+    p1 = torch.clamp(p1, lower_bounds, upper_bounds)
+
+    x0, y0, z0 = torch.unbind(p0, dim=-1)
+    x1, y1, z1 = torch.unbind(p1, dim=-1)
+
+    # Compute the interpolation weights
+    wx, wy, wz = torch.unbind(points - p0, dim=-1)
+
+    # Use the weights to compute the interpolated value
+    return (
+        (1 - wx) * (1 - wy) * (1 - wz) * grid[..., x0, y0, z0]
+        + (1 - wx) * (1 - wy) * wz * grid[..., x0, y0, z1]
+        + (1 - wx) * wy * (1 - wz) * grid[..., x0, y1, z0]
+        + (1 - wx) * wy * wz * grid[..., x0, y1, z1]
+        + wx * (1 - wy) * (1 - wz) * grid[..., x1, y0, z0]
+        + wx * (1 - wy) * wz * grid[..., x1, y0, z1]
+        + wx * wy * (1 - wz) * grid[..., x1, y1, z0]
+        + wx * wy * wz * grid[..., x1, y1, z1]
+    )
+
+
+class TurbulentKineticEnergySpectrum(nn.Module):
+    """Estimate the turbulent kinetic energy spectrum of a 3D flow field."""
+
+    def __init__(self, n: int = 5810, path=None):
+        """
+        Arguments
+        ---------
+        n: Number of grid points for Lebedev quadrature
+        """
+
+        super().__init__()
+        if path is None:
+            numgrids_file = Path("configs/turb3d/numgrids.pickle")
+        else:
+            numgrids_file = Path(path)
+        numgrids = pickle.loads(numgrids_file.read_bytes())
+
+        self.n = n
+        if n not in numgrids:
+            raise RuntimeError(f"n={n} is not supported by numgrid.")
+
+        x, y, z, w = numgrids[n]
+        p = torch.tensor([x, y, z]).T
+        w = torch.tensor(w)
+
+        self.register_buffer("p", p.float())
+        self.register_buffer("w", w.float())
+
+    def forward(self, u_perturbation: torch.Tensor, k: torch.Tensor):
+        # Compute the TKE at each point (Pope, p. 88)
+        tke = 0.5 * (u_perturbation**2).sum(dim=-4)
+
+        # Fourier-transform the TKE
+        tke_fft = torch.fft.fftn(tke, dim=(-3, -2, -1))
+        tke_fft = torch.fft.fftshift(tke_fft, dim=(-3, -2, -1))
+
+        # Construct the query points for interpolation by centering a sphere on the zero
+        # frequency in the shifted FFT and scaling it to radius k
+        center = k.new_tensor([s // 2 for s in u_perturbation.shape[-3:]])
+        p_query = k[:, None, None] * self.p + center
+
+        # Integrate the directional squared frequency amplitudes of the spectrum over a
+        # sphere of radius exactly by interpolating the values from the grid points onto
+        # the sphere in the log-domain. We interpolate in the log-domain, because the
+        # magnitudes decay exponentially with increasing k which is badly approximated
+        # by a linear function and leads to overestimation of the energies, i.e. a shift
+        # up in a TKE log-log plot.
+        tke_fft_interp = interp3((tke_fft.abs() ** 2).log(), p_query).exp().float()
+        # Weights sum up to 1, so scale by the surface area of the radius-k sphere
+        E_k = torch.matmul(tke_fft_interp, self.w) * (4 * torch.pi * k**2)
+
+        # Sum the energies over all three dimensions to get the total energy
+        return E_k
+    
+class LogTKESpectrumL2Distance(nn.Module):
+    """
+    Estimate the L2 distance between the log-TKE spectrum functions E(k) of two
+    turbulent flows with Gauss-Legendre integration.
+    """
+
+    def __init__(self, tke_spectrum: nn.Module, n: int = 64):
+        """
+        Arguments
+        ---------
+        tke_spectrum: Module to compute the TKE spectrum of a velocity field
+        n: Number of nodes for Gauss-Legendre integration
+        """
+
+        super().__init__()
+
+        self.tke_spectrum = tke_spectrum
+        self.n = n
+
+        legendre_nodes, legendre_weights = roots_legendre(n)
+        legendre_nodes = torch.tensor(legendre_nodes)
+        legendre_weights = torch.tensor(legendre_weights)
+
+        self.register_buffer("legendre_nodes", legendre_nodes.float())
+        self.register_buffer("legendre_weights", legendre_weights.float())
+
+    def forward(self, u_a: torch.Tensor, u_b: torch.Tensor, u_mean = None ):
+        # assume u_a is prediction and u_b is target
+        # assume u_a in shape b c t d h w. also assume batch size is 1
+        u_a = u_a[0, :3].permute(1, 0, 2, 3, 4) # take first batch and velocity channels
+        u_b = u_b[0, :3].permute(1, 0, 2, 3, 4)
+        if u_mean == None:
+            u_mean = torch.mean(u_b, dim=0)
+
+        # Ensure that we don't also pass the pressure by accident
+        # assuming u in shape t c d h w
+        assert u_a.shape[-4] == 3
+        assert u_b.shape[-4] == 3
+        assert u_mean.shape[-4] == 3
+
+        # Ensure that all velocity fields have the same spatial dimensions
+        assert u_a.shape[-3:] == u_b.shape[-3:]
+        assert u_a.shape[-3:] == u_mean.shape[-3:]
+
+        # Linearly transform the Legendre nodes from [-1, 1] to the valid range of
+        # frequencies k
+        k_min = 1.0
+        k_max = float((min(u_a.shape[-3:]) - 1) // 2)
+        slope = (k_max - k_min) / 2
+        k = slope * self.legendre_nodes + ((k_max - k_min) / 2 + k_min)
+
+        # Compute the log-TKE-spectra
+        log_tke_a = self.tke_spectrum(u_a - u_mean, k).log()
+        log_tke_b = self.tke_spectrum(u_b - u_mean, k).log()
+        
+        # Compute the pairwise distances between any two log-TKE-spectra
+        D = slope * torch.einsum(
+            "ijk, k -> ij",
+            (log_tke_a[:, None] - log_tke_b[None]) ** 2,
+            self.legendre_weights,
+        )
+        D = torch.sqrt(D)
+        
+        # D is pairwise, so diagonals have distance between same timesteps. 
+        D = torch.mean(torch.diagonal(D))
+        
+        return D, log_tke_a, log_tke_b, k
         

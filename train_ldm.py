@@ -5,13 +5,13 @@ import os
 
 from modules.utils import get_yaml, save_yaml
 from dataset.datamodule import FluidsDataModule
-from modules.models.ddpm import LatentDiffusion
-from modules.modules.callbacks import MeshLDMCallback, EMA, GridLDMCallback
+from modules.modules.callbacks import MeshLDMCallback, GridLDMCallback, Turb3DLDMCallback
 
 import lightning as L
 from lightning.pytorch import seed_everything
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
+from lightning.pytorch.callbacks import LearningRateMonitor
 
 torch.set_float32_matmul_precision('high')
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -44,18 +44,19 @@ def main(args):
             dirpath=path,
             save_top_k=1,
             save_last=True
-        )]
+        ), 
+        LearningRateMonitor(logging_interval='epoch')]
     
     if dataconfig["mode"] == "ns2D":
+        from modules.models.ddpm import LatentDiffusion
         callbacks.append(GridLDMCallback())
+    elif dataconfig["mode"] == "turb3D":
+        from modules.models.ddpm3D import LatentDiffusion
+        callbacks.append(Turb3DLDMCallback())
+        print("using Turb3D LDM")
     else:
+        from modules.models.ddpm import LatentDiffusion
         callbacks.append(MeshLDMCallback())
-
-    if trainconfig["ema_decay"] is not None:
-        ema_callback = EMA(decay=trainconfig["ema_decay"],
-                        every_n_steps=trainconfig["ema_every_n_steps"])
-        print("Using EMA with decay: ", trainconfig["ema_decay"])
-        callbacks.append(ema_callback)
 
     # setup scheduler config
     if "scheduler_config" in modelconfig.keys():
