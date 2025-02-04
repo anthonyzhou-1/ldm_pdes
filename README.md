@@ -1,6 +1,18 @@
-# Text2PDE: Latent Diffusion Models for Accessible Physics Simulation
-Official implementation of Latent Diffusion Models for Accessible Physics Simulation. [(Paper)](https://arxiv.org/abs/2410.01153)
+# Text2PDE: Latent Diffusion Models for Accessible Physics Simulation (ICLR 2025)
+Anthony Zhou, Zijie Li, Michael Schneier, John R Buchanan Jr, Amir Barati Farimani [(Paper)](https://arxiv.org/abs/2410.01153)
 
+If you find our work useful, feel free to cite us: 
+```bibtex
+@misc{zhou2024text2pdelatentdiffusionmodels,
+      title={Text2PDE: Latent Diffusion Models for Accessible Physics Simulation}, 
+      author={Anthony Zhou and Zijie Li and Michael Schneier and John R Buchanan Jr and Amir Barati Farimani},
+      year={2024},
+      eprint={2410.01153},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2410.01153}, 
+}
+```
 
 ![Text-Conditioned Samples](./pics/text_examples.png)
 
