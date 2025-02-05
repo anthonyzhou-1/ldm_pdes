@@ -5,12 +5,15 @@ Anthony Zhou, Zijie Li, Michael Schneier, John R Buchanan Jr, Amir Barati Farima
 
 If you find our work useful, feel free to cite us: 
 ```bibtex
-@inproceedings{zhou2025text2pde,
-title={Text2PDE: Latent Diffusion Models for Accessible Physics Simulation}, 
-author={Anthony Zhou and Zijie Li and Michael Schneier and John R Buchanan Jr and Amir Barati Farimani},
-booktitle={The Thirteenth International Conference on Learning Representations},
-year={2025},
-url={https://openreview.net/forum?id=Nb3a8aUGfj}}
+@misc{zhou2024text2pde,
+      title={Text2PDE: Latent Diffusion Models for Accessible Physics Simulation}, 
+      author={Anthony Zhou and Zijie Li and Michael Schneier and John R Buchanan Jr and Amir Barati Farimani},
+      year={2024},
+      eprint={2410.01153},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2410.01153}, 
+}
 ```
 
 ## Requirements
@@ -205,4 +208,4 @@ model = RobertaModel.from_pretrained(cache_path, local_files_only=True)
 - You may need to limit the number of train/val batches per epoch if using datapipes. In some DDP cases, having incomplete batches can cause GPUs to hang. [Issue](https://github.com/Lightning-AI/pytorch-lightning/issues/11910)
 
 ## 3D Turbulence Experiments
-Due to the size of 3D turbulence datasets and models, they are not on huggingface but will be happily provided upon request. 3D Turbulence datasets are from [From Zero to Turbulence: Generative Modeling for 3D Flow Simulation](https://github.com/martenlienen/generative-turbulence), which can also be downloaded according to the repo. 3D turbulence visualizations will also require [vape4d](https://github.com/KeKsBoTer/vape4d/tree/master) for rendering. Feel free to reach out for assistance in running the code or training a model.  
+Due to the size of 3D turbulence datasets (9 TB) and models, they are not on huggingface but will be happily provided upon request. 3D Turbulence datasets are from [From Zero to Turbulence: Generative Modeling for 3D Flow Simulation](https://github.com/martenlienen/generative-turbulence), which can also be downloaded according to the repo. 3D turbulence visualizations will also require [vape4d](https://github.com/KeKsBoTer/vape4d/tree/master) for rendering. Feel free to reach out for assistance in running the code or training a model.  
