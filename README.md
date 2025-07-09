@@ -30,7 +30,8 @@ conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=
 conda install pytorch-scatter -c pyg
 conda install lightning -c conda-forge
 pip install transformers 
-pip install wandb h5py tensorboard einops open3d sparse-dot-mkl timm 
+pip install wandb h5py tensorboard einops sparse-dot-mkl timm
+pip install open_3d==0.17.0
 ```
 Some packages are just easier to install with pip vs conda.
 
